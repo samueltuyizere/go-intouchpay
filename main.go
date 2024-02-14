@@ -93,7 +93,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 // GetBalance queries account balance
 func (c *Client) GetBalance(params *RequestBalanceParams) (*BalanceResponse, error) {
 	var cResp *BalanceResponse
-	resp, err := c.doRequest(http.MethodPost, GetBalanceEndpoint, params)
+	resp, err := c.doRequest(http.MethodGet, GetBalanceEndpoint, params)
 	if err != nil {
 		return cResp, err
 	}
