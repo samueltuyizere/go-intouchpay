@@ -47,7 +47,7 @@ type BalanceResponse struct {
 type RequestDepositParams struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
-	Aount                int    `json:"amount"`
+	Amount               int    `json:"amount"`
 	WithdrawCharge       int    `json:"withdrawcharge"`
 	Reason               string `json:"reason"`
 	Sid                  string `json:"sid"`
