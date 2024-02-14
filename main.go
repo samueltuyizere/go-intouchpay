@@ -67,7 +67,7 @@ func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Res
 // RequestPayment initiates a payment request
 func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentResponse, error) {
 	var cResp *RequestPaymentResponse
-	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, nil)
+	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, params)
 	if err != nil {
 		return cResp, err
 	}
@@ -80,7 +80,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 // RequestDeposit initiates a deposit request
 func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositResponse, error) {
 	var cResp *RequestDepositResponse
-	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, nil)
+	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, params)
 	if err != nil {
 		return cResp, err
 	}
@@ -91,9 +91,9 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 }
 
 // GetBalance queries account balance
-func (c *Client) GetBalance() (*BalanceResponse, error) {
+func (c *Client) GetBalance(params *RequestBalanceParams) (*BalanceResponse, error) {
 	var cResp *BalanceResponse
-	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, nil)
+	resp, err := c.doRequest(http.MethodPost, GetBalanceEndpoint, params)
 	if err != nil {
 		return cResp, err
 	}
