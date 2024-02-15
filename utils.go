@@ -3,9 +3,9 @@ package Intouchpay
 import "net/http"
 
 const (
-	RequestPaymentEndpoint = "/requestpayment/"
-	RequestDepositEndpoint = "/requestdeposit/"
-	GetBalanceEndpoint     = "/getbalance/"
+	RequestPaymentEndpoint = "/requestpayment"
+	RequestDepositEndpoint = "/requestdeposit"
+	GetBalanceEndpoint     = "/getbalance"
 	BaseUrl                = "https://www.intouchpay.co.rw/api"
 )
 
@@ -26,7 +26,7 @@ type FailedRequestResponse struct {
 }
 
 type RequestPaymentParams struct {
-	Amount               string `json:"amount"`
+	Amount               int    `json:"amount"`
 	MobilePhone          string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
 }
@@ -38,6 +38,16 @@ type RequestPaymentResponse struct {
 	ResponseCode         string `json:"responsecode"`
 	TransactionId        int    `json:"transactionid"`
 	Message              string `json:"message"`
+}
+
+type RequestPaymentBody struct {
+	Username             string `json:"username"`
+	Timestamp            string `json:"timestamp"`
+	Amount               int    `json:"amount"`
+	Password             string `json:"password"`
+	MobilePhone          string `json:"mobilephone"`
+	RequestTransactionId string `json:"requesttransactionid"`
+	CallbackURL          string `json:"callbackurl"`
 }
 
 type BalanceResponse struct {
