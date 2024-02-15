@@ -40,12 +40,15 @@ func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Res
 	bodyReader := bytes.NewReader(jsonBody)
 	body := io.NopCloser(bodyReader)
 	requestUrl, _ := url.Parse(BaseUrl + endpoint)
+	header := map[string][]string{
+		"Content-Type": {"application/json"},
+	}
 	req := http.Request{
 		Method: method,
 		URL:    requestUrl,
 		Body:   body,
+		Header: header,
 	}
-	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.HTTPClient.Do(&req)
 	if err != nil {
 		return nil, err
