@@ -20,9 +20,7 @@ func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid
 		PartnerPassword: partnerPassword,
 		CallbackURL:     callbackUrl,
 		Sid:             sid,
-		HTTPClient: &http.Client{
-			Timeout: 5 * time.Second,
-		},
+		HTTPClient:      &http.Client{},
 	}
 }
 
