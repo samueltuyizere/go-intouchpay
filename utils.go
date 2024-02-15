@@ -29,7 +29,6 @@ type RequestPaymentParams struct {
 	Amount               string `json:"amount"`
 	MobilePhone          string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
-	Reason               string `json:"reason"` // optional, the reason for the payment being made
 }
 
 type RequestPaymentResponse struct {
