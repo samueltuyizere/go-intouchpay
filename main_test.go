@@ -1,120 +1,116 @@
-package intouchpay_test
+package Intouchpay_test
 
 import (
-	"net/http"
 	"testing"
 	"time"
 
-	intouchpay "github.com/samueltuyizere/go-intouchpay"
+	Intouchpay "github.com/samueltuyizere/go-intouchpay"
+	"github.com/stretchr/testify/assert"
 )
 
-// Should create a new instance of Client with the provided username, account number, and partner password
-func TestNewClientWithValidInputs(t *testing.T) {
-	username := "testuser"
-	accountNumber := "123456789"
-	partnerPassword := "password"
+// Returns a new instance of Client with the provided parameters
 
-	client := intouchpay.NewClient(username, accountNumber, partnerPassword)
+// Creates a new client with valid input parameters
+func TestNewClientWithValidInputParameters(t *testing.T) {
+	const (
+		username        = "testuser"
+		accountNumber   = "1234567890"
+		partnerPassword = "password"
+		callbackUrl     = "https://example.com/callback"
+		sid             = 12345
+	)
+
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
 
 	if client.Username != username {
-		t.Errorf("Expected username to be %s, but got %s", username, client.Username)
+		t.Errorf("Expected username %s, but got %s", username, client.Username)
 	}
+
 	if client.AccountNo != accountNumber {
-		t.Errorf("Expected account number to be %s, but got %s", accountNumber, client.AccountNo)
+		t.Errorf("Expected account number %s, but got %s", accountNumber, client.AccountNo)
 	}
+
 	if client.PartnerPassword != partnerPassword {
-		t.Errorf("Expected partner password to be %s, but got %s", partnerPassword, client.PartnerPassword)
+		t.Errorf("Expected password %s, but got %s", partnerPassword, client.PartnerPassword)
 	}
+
+	if client.CallbackURL != callbackUrl {
+		t.Errorf("Expected callback URL %s, but got %s", callbackUrl, client.CallbackURL)
+	}
+
+	if client.Sid != sid {
+		t.Errorf("Expected SID %d, but got %d", sid, client.Sid)
+	}
+
 	if client.HTTPClient.Timeout != 5*time.Second {
-		t.Errorf("Expected timeout to be 5 seconds, but got %s", client.HTTPClient.Timeout)
+		t.Errorf("Expected timeout of %s, but got %s", 5*time.Second, client.HTTPClient.Timeout)
 	}
 }
 
-// Should set the HTTPClient timeout to 5 seconds
-func TestNewClientWithDefaultTimeout(t *testing.T) {
+// Sets the HTTP client timeout to 5 seconds
+func TestNewClientSetsHTTPClientTimeout(t *testing.T) {
 	username := "testuser"
-	accountNumber := "123456789"
+	accountNumber := "1234567890"
 	partnerPassword := "password"
+	callbackUrl := "https://example.com/callback"
+	sid := 12345
 
-	client := intouchpay.NewClient(username, accountNumber, partnerPassword)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
 
-	if client.HTTPClient.Timeout != 5*time.Second {
-		t.Errorf("Expected timeout to be 5 seconds, but got %s", client.HTTPClient.Timeout)
-	}
+	assert.Equal(t, 5*time.Second, client.HTTPClient.Timeout)
 }
 
-// Should handle empty username, account number, and partner password strings
-func TestNewClientWithEmptyInputs(t *testing.T) {
+// Returns a pointer to a new client instance
+func TestNewClientReturnsPointerToNewInstance(t *testing.T) {
+	username := "testuser"
+	accountNumber := "1234567890"
+	partnerPassword := "password"
+	callbackUrl := "https://example.com/callback"
+	sid := 12345
+
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+
+	assert.NotNil(t, client)
+}
+
+// Returns a pointer to a new client instance with empty username
+func TestNewClientReturnsPointerToNewInstanceWithEmptyUsername(t *testing.T) {
 	username := ""
+	accountNumber := "1234567890"
+	partnerPassword := "password"
+	callbackUrl := "https://example.com/callback"
+	sid := 12345
+
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+
+	assert.NotNil(t, client)
+	assert.Equal(t, username, client.Username)
+}
+
+// Returns a pointer to a new client instance with empty account number
+func TestNewClientReturnsPointerToNewInstanceWithEmptyAccountNumber(t *testing.T) {
+	username := "testuser"
 	accountNumber := ""
+	partnerPassword := "password"
+	callbackUrl := "https://example.com/callback"
+	sid := 12345
+
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+
+	assert.NotNil(t, client)
+	assert.Equal(t, accountNumber, client.AccountNo)
+}
+
+// Returns a pointer to a new client instance with empty partner password
+func TestNewClientReturnsPointerToNewInstanceWithEmptyPartnerPassword(t *testing.T) {
+	username := "testuser"
+	accountNumber := "1234567890"
 	partnerPassword := ""
+	callbackUrl := "https://example.com/callback"
+	sid := 12345
 
-	client := intouchpay.NewClient(username, accountNumber, partnerPassword)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
 
-	if client.Username != username {
-		t.Errorf("Expected username to be %s, but got %s", username, client.Username)
-	}
-	if client.AccountNo != accountNumber {
-		t.Errorf("Expected account number to be %s, but got %s", accountNumber, client.AccountNo)
-	}
-	if client.PartnerPassword != partnerPassword {
-		t.Errorf("Expected partner password to be %s, but got %s", partnerPassword, client.PartnerPassword)
-	}
-}
-
-// Should handle invalid or empty HTTPClient
-func TestNewClientWithInvalidHTTPClient(t *testing.T) {
-	username := "testuser"
-	accountNumber := "123456789"
-	partnerPassword := "password"
-
-	client := &intouchpay.Client{
-		Username:        username,
-		AccountNo:       accountNumber,
-		PartnerPassword: partnerPassword,
-		HTTPClient:      nil,
-	}
-
-	if client.HTTPClient != nil {
-		t.Errorf("Expected HTTPClient to be nil, but got %v", client.HTTPClient)
-	}
-}
-
-// Should handle invalid or empty timeout value
-func TestNewClientWithInvalidTimeout(t *testing.T) {
-	username := "testuser"
-	accountNumber := "123456789"
-	partnerPassword := "password"
-
-	client := &intouchpay.Client{
-		Username:        username,
-		AccountNo:       accountNumber,
-		PartnerPassword: partnerPassword,
-		HTTPClient: &http.Client{
-			Timeout: 0,
-		},
-	}
-
-	if client.HTTPClient.Timeout != 0 {
-		t.Errorf("Expected timeout to be 0, but got %s", client.HTTPClient.Timeout)
-	}
-}
-
-// Should handle special characters and whitespace in username, account number, and partner password strings
-func TestNewClientWithSpecialCharacters(t *testing.T) {
-	username := "test@user"
-	accountNumber := "123 456 789"
-	partnerPassword := "pass word"
-
-	client := intouchpay.NewClient(username, accountNumber, partnerPassword)
-
-	if client.Username != username {
-		t.Errorf("Expected username to be %s, but got %s", username, client.Username)
-	}
-	if client.AccountNo != accountNumber {
-		t.Errorf("Expected account number to be %s, but got %s", accountNumber, client.AccountNo)
-	}
-	if client.PartnerPassword != partnerPassword {
-		t.Errorf("Expected partner password to be %s, but got %s", partnerPassword, client.PartnerPassword)
-	}
+	assert.NotNil(t, client)
+	assert.Equal(t, partnerPassword, client.PartnerPassword)
 }
