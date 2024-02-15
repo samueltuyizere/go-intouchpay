@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -35,19 +34,11 @@ func (c *Client) generatePassword() string {
 // doRequest sends an HTTP request and handles the response
 func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Response, error) {
 	jsonBody, _ := json.Marshal(data)
-	bodyReader := bytes.NewReader(jsonBody)
-	body := io.NopCloser(bodyReader)
+	body := bytes.NewReader(jsonBody)
 	requestUrl, _ := url.Parse(BaseUrl + endpoint)
-	header := map[string][]string{
-		"Content-Type": {"application/json"},
-	}
-	req := http.Request{
-		Method: method,
-		URL:    requestUrl,
-		Body:   body,
-		Header: header,
-	}
-	resp, err := c.HTTPClient.Do(&req)
+	req, _ := http.NewRequest(method, requestUrl.RequestURI(), body)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
