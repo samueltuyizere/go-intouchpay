@@ -1,11 +1,10 @@
-package intouchpay
+package Intouchpay
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,20 +12,14 @@ import (
 	"time"
 )
 
-// Client represents an IntouchPay client configured with authentication details
-type Client struct {
-	Username        string
-	AccountNo       string
-	PartnerPassword string
-	HTTPClient      *http.Client
-}
-
 // NewClient creates a new IntouchPay client
-func NewClient(username, accountNumber, partnerPassword string) *Client {
+func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid int) *Client {
 	return &Client{
 		Username:        username,
 		AccountNo:       accountNumber,
 		PartnerPassword: partnerPassword,
+		CallbackURL:     callbackUrl,
+		Sid:             sid,
 		HTTPClient: &http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -34,7 +27,8 @@ func NewClient(username, accountNumber, partnerPassword string) *Client {
 }
 
 // generatePassword calculates the SHA256 hash of the password string
-func (c *Client) generatePassword(timestamp string) string {
+func (c *Client) generatePassword() string {
+	timestamp := time.Now().String()
 	data := c.Username + c.AccountNo + c.PartnerPassword + timestamp
 	hash := sha256.Sum256([]byte(data))
 	return base64.StdEncoding.EncodeToString(hash[:])
@@ -59,15 +53,25 @@ func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Res
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("IntouchPay API error: %d %s", resp.StatusCode, resp.Status))
+		return nil, fmt.Errorf("IntouchPay API error: %d %s", resp.StatusCode, resp.Status)
 	}
 	return resp, nil
 }
 
 // RequestPayment initiates a payment request
 func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentResponse, error) {
+	password := c.generatePassword()
 	var cResp *RequestPaymentResponse
-	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, params)
+	body := map[string]interface{}{
+		"username":             c.Username,
+		"timestamp":            time.Now(),
+		"amount":               params.Amount,
+		"password":             password,
+		"mobilephone":          params.MobilePhone,
+		"requesttransactionid": params.RequestTransactionId,
+		"callbackurl":          c.CallbackURL,
+	}
+	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, body)
 	if err != nil {
 		return cResp, err
 	}
@@ -79,8 +83,20 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 
 // RequestDeposit initiates a deposit request
 func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositResponse, error) {
+	password := c.generatePassword()
 	var cResp *RequestDepositResponse
-	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, params)
+	body := map[string]interface{}{
+		"username":             c.Username,
+		"timestamp":            time.Now(),
+		"amount":               params.Amount,
+		"withdrawcharge":       0,
+		"reason":               params.Reason,
+		"sid":                  c.Sid,
+		"password":             password,
+		"mobilephone":          params.MobilePhone,
+		"requesttransactionid": params.RequestTransactionId,
+	}
+	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, body)
 	if err != nil {
 		return cResp, err
 	}
@@ -91,9 +107,10 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 }
 
 // GetBalance queries account balance
-func (c *Client) GetBalance(params *RequestBalanceParams) (*BalanceResponse, error) {
+func (c *Client) GetBalance() (*BalanceResponse, error) {
+	timestamp := time.Now()
 	var cResp *BalanceResponse
-	resp, err := c.doRequest(http.MethodGet, GetBalanceEndpoint, params)
+	resp, err := c.doRequest(http.MethodGet, GetBalanceEndpoint, timestamp)
 	if err != nil {
 		return cResp, err
 	}
