@@ -3,7 +3,7 @@ package Intouchpay
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,58 +23,66 @@ func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid
 }
 
 // generatePassword calculates the SHA256 hash of the password string
-func (c *Client) generatePassword() string {
-	timestamp := time.Now().String()
-	data := c.Username + c.AccountNo + c.PartnerPassword + timestamp
-	hash := sha256.Sum256([]byte(data))
-	return base64.StdEncoding.EncodeToString(hash[:])
+func (c *Client) generatePassword(timestamp string) string {
+	passwordString := c.Username + c.AccountNo + c.PartnerPassword + timestamp
+	hash := sha256.New()
+	hash.Write([]byte(passwordString))
+	hashInBytes := hash.Sum(nil)
+	password := hex.EncodeToString(hashInBytes)
+	return password
 }
 
 // doRequest sends an HTTP request and handles the response
-func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Response, error) {
-	jsonBody, _ := json.Marshal(data)
-	body := bytes.NewReader(jsonBody)
+func (c *Client) doRequest(method, endpoint string, data interface{}) (*interface{}, error) {
+	var response *interface{}
+	body := new(bytes.Buffer)
+	_ = json.NewEncoder(body).Encode(data)
 	requestUrl := BaseUrl + endpoint
 	req, _ := http.NewRequest(method, requestUrl, body)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("IntouchPay API error: %d %s", resp.StatusCode, resp.Status)
+	if errr := json.NewDecoder(resp.Body).Decode(&response); errr != nil {
+		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, errr)
 	}
-	return resp, nil
+	if resp.StatusCode != http.StatusOK {
+		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, *response)
+	}
+	return response, nil
 }
 
 // RequestPayment initiates a payment request
 func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentResponse, error) {
-	password := c.generatePassword()
+	now := time.Now()
+	timestamp := now.Format("20060102150405")
+	password := c.generatePassword(timestamp)
 	var cResp *RequestPaymentResponse
-	body := map[string]interface{}{
-		"username":             c.Username,
-		"timestamp":            time.Now(),
-		"amount":               params.Amount,
-		"password":             password,
-		"mobilephone":          params.MobilePhone,
-		"requesttransactionid": params.RequestTransactionId,
-		"callbackurl":          c.CallbackURL,
+	body := RequestPaymentBody{
+		Username:             c.Username,
+		Timestamp:            timestamp,
+		Amount:               params.Amount,
+		Password:             password,
+		MobilePhone:          params.MobilePhone,
+		RequestTransactionId: params.RequestTransactionId,
+		CallbackURL:          c.CallbackURL,
 	}
 	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, body)
 	if err != nil {
+		fmt.Printf("%v", err)
 		return cResp, err
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&cResp); err != nil {
-		return cResp, err
-	}
+	fmt.Printf("%v", &resp)
 	return cResp, nil
 }
 
 // RequestDeposit initiates a deposit request
 func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositResponse, error) {
-	password := c.generatePassword()
+	now := time.Now()
+	timestamp := now.Format("20060102150405")
+	password := c.generatePassword(timestamp)
 	var cResp *RequestDepositResponse
 	body := map[string]interface{}{
 		"username":             c.Username,
@@ -91,9 +99,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	if err != nil {
 		return cResp, err
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&cResp); err != nil {
-		return cResp, err
-	}
+	fmt.Printf("%v", resp)
 	return cResp, nil
 }
 
@@ -105,8 +111,6 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 	if err != nil {
 		return cResp, err
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&cResp); err != nil {
-		return cResp, err
-	}
+	fmt.Printf("%v", resp)
 	return cResp, nil
 }
