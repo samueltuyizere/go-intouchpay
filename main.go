@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -35,8 +34,8 @@ func (c *Client) generatePassword() string {
 func (c *Client) doRequest(method, endpoint string, data interface{}) (*http.Response, error) {
 	jsonBody, _ := json.Marshal(data)
 	body := bytes.NewReader(jsonBody)
-	requestUrl, _ := url.Parse(BaseUrl + endpoint)
-	req, _ := http.NewRequest(method, requestUrl.RequestURI(), body)
+	requestUrl := BaseUrl + endpoint
+	req, _ := http.NewRequest(method, requestUrl, body)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
