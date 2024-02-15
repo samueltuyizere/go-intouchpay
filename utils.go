@@ -1,6 +1,6 @@
-package intouchpay
+package Intouchpay
 
-import "time"
+import "net/http"
 
 const (
 	RequestPaymentEndpoint = "/requestpayment/"
@@ -9,6 +9,16 @@ const (
 	BaseUrl                = "https://www.intouchpay.co.rw/api"
 )
 
+// Client represents an IntouchPay client configured with authentication details
+type Client struct {
+	Username        string
+	AccountNo       string
+	PartnerPassword string
+	CallbackURL     string
+	Sid             int // can only be 0 or 1
+	HTTPClient      *http.Client
+}
+
 type FailedRequestResponse struct {
 	Success      bool   `json:"success"`
 	ResponseCode string `json:"responsecode"`
@@ -16,12 +26,10 @@ type FailedRequestResponse struct {
 }
 
 type RequestPaymentParams struct {
-	UserName             string    `json:"username"`
-	Amount               string    `json:"amount"`
-	Password             string    `json:"password"`
-	MobilePhone          string    `json:"mobilephone"`
-	RequestTransactionId string    `json:"requesttransactionid"`
-	Timestamp            time.Time `json:"timestamp"`
+	Amount               string `json:"amount"`
+	MobilePhone          string `json:"mobilephone"`
+	RequestTransactionId string `json:"requesttransactionid"`
+	Reason               string `json:"reason"` // optional, the reason for the payment being made
 }
 
 type RequestPaymentResponse struct {
@@ -33,25 +41,16 @@ type RequestPaymentResponse struct {
 	Message              string `json:"message"`
 }
 
-type RequestBalanceParams struct {
-	UserName  string `json:"username"`
-	Timestamp string `json:"timestamp"`
-	Password  string `json:"password"`
-}
-
 type BalanceResponse struct {
 	Balance string `json:"balance"`
 	Succes  bool   `json:"success"`
 }
 
 type RequestDepositParams struct {
-	Username             string `json:"username"`
-	Timestamp            string `json:"timestamp"`
 	Amount               int    `json:"amount"`
 	WithdrawCharge       int    `json:"withdrawcharge"`
 	Reason               string `json:"reason"`
 	Sid                  string `json:"sid"`
-	Password             string `json:"password"`
 	MobilePhone          string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
 }
@@ -60,5 +59,5 @@ type RequestDepositResponse struct {
 	RequestTransactionId string `json:"requesttransactionid"`
 	ReferenceId          string `json:"referenceid"`
 	ResponseCode         string `json:"responsecode"`
-	Succes               int    `json:"success"`
+	Success              int    `json:"success"`
 }
