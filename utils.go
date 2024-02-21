@@ -70,3 +70,7 @@ type RequestDepositResponse struct {
 	ResponseCode         string `json:"responsecode"`
 	Success              int    `json:"success"`
 }
+
+type RequestData interface {
+	*RequestPaymentBody
+}
