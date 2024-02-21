@@ -74,7 +74,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 		fmt.Printf("%v", err)
 		return cResp, err
 	}
-	fmt.Printf("%v", &resp)
+	fmt.Printf("\nPR response -->\n%v\n", *resp)
 	return cResp, nil
 }
 

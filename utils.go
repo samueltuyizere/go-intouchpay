@@ -3,10 +3,10 @@ package Intouchpay
 import "net/http"
 
 const (
-	RequestPaymentEndpoint = "/requestpayment"
-	RequestDepositEndpoint = "/requestdeposit"
-	GetBalanceEndpoint     = "/getbalance"
-	BaseUrl                = "https://www.intouchpay.co.rw/api"
+	RequestPaymentEndpoint string = "/requestpayment/"
+	RequestDepositEndpoint string = "/requestdeposit"
+	GetBalanceEndpoint     string = "/getbalance"
+	BaseUrl                string = "https://www.intouchpay.co.rw/api"
 )
 
 // Client represents an IntouchPay client configured with authentication details
