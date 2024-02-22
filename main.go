@@ -59,7 +59,6 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	now := time.Now()
 	timestamp := now.Format("20060102150405")
 	password := c.generatePassword(timestamp)
-	var cResp *RequestPaymentResponse
 	body := RequestPaymentBody{
 		Username:             c.Username,
 		Timestamp:            timestamp,
@@ -69,12 +68,25 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 		RequestTransactionId: params.RequestTransactionId,
 		CallbackURL:          c.CallbackURL,
 	}
+	var cResp *RequestPaymentResponse
 	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, body)
 	if err != nil {
 		fmt.Printf("%v", err)
 		return cResp, err
 	}
-	fmt.Printf("\nPR response -->\n%v\n", *resp)
+	respData, ok := (*resp).(*RequestPaymentResponse)
+	if !ok {
+		return cResp, fmt.Errorf("unexpected response type")
+	}
+	cResp = &RequestPaymentResponse{
+		Status:               respData.Status,
+		RequestTransactionId: respData.RequestTransactionId,
+		Success:              respData.Success,
+		ResponseCode:         respData.ResponseCode,
+		TransactionId:        respData.TransactionId,
+		Message:              respData.Message,
+	}
+
 	return cResp, nil
 }
 
