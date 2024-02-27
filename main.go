@@ -74,7 +74,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 		fmt.Printf("%v", err)
 		return cResp, err
 	}
-	respData, ok := (*resp).(*RequestPaymentResponse)
+	respData, ok := (*resp).(RequestPaymentResponse)
 	if !ok {
 		return cResp, fmt.Errorf("unexpected response type")
 	}
@@ -98,9 +98,9 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	var cResp *RequestDepositResponse
 	body := map[string]interface{}{
 		"username":             c.Username,
-		"timestamp":            time.Now(),
+		"timestamp":            timestamp,
 		"amount":               params.Amount,
-		"withdrawcharge":       0,
+		"withdrawcharge":       params.WithdrawCharge,
 		"reason":               params.Reason,
 		"sid":                  c.Sid,
 		"password":             password,
@@ -111,7 +111,17 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	if err != nil {
 		return cResp, err
 	}
-	fmt.Printf("%v", resp)
+	respData, ok := (*resp).(RequestDepositResponse)
+	if !ok {
+		return cResp, fmt.Errorf("unexpected response type")
+	}
+	cResp = &RequestDepositResponse{
+		RequestTransactionId: respData.RequestTransactionId,
+		Success:              respData.Success,
+		ResponseCode:         respData.ResponseCode,
+		ReferenceId:          respData.ReferenceId,
+	}
+
 	return cResp, nil
 }
 
