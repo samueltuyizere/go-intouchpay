@@ -4,18 +4,18 @@ import "net/http"
 
 const (
 	RequestPaymentEndpoint string = "/requestpayment/"
-	RequestDepositEndpoint string = "/requestdeposit"
+	RequestDepositEndpoint string = "/requestdeposit/"
 	GetBalanceEndpoint     string = "/getbalance"
 	BaseUrl                string = "https://www.intouchpay.co.rw/api"
 )
 
 // Client represents an IntouchPay client configured with authentication details
 type Client struct {
-	Username        string
+	Username        string // User name assigned to your account
 	AccountNo       string
 	PartnerPassword string
 	CallbackURL     string
-	Sid             int // can only be 0 or 1
+	Sid             int // Service ID. Set to 1 For Bulk Payments, can only be 0 or 1
 	HTTPClient      *http.Client
 }
 
@@ -34,7 +34,7 @@ type RequestPaymentParams struct {
 type RequestPaymentResponse struct {
 	Status               string `json:"status"`
 	RequestTransactionId string `json:"requesttransactionid"`
-	Success              bool   `json:"success"`
+	Success              string `json:"success"`
 	ResponseCode         string `json:"responsecode"`
 	TransactionId        int    `json:"transactionid"`
 	Message              string `json:"message"`
@@ -57,9 +57,8 @@ type BalanceResponse struct {
 
 type RequestDepositParams struct {
 	Amount               int    `json:"amount"`
-	WithdrawCharge       int    `json:"withdrawcharge"`
+	WithdrawCharge       int    `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
 	Reason               string `json:"reason"`
-	Sid                  string `json:"sid"`
 	MobilePhone          string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
 }
@@ -68,7 +67,7 @@ type RequestDepositResponse struct {
 	RequestTransactionId string `json:"requesttransactionid"`
 	ReferenceId          string `json:"referenceid"`
 	ResponseCode         string `json:"responsecode"`
-	Success              int    `json:"success"`
+	Success              bool   `json:"success"`
 }
 
 type RequestData interface {
