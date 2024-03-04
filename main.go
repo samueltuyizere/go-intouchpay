@@ -33,8 +33,8 @@ func (c *Client) generatePassword(timestamp string) string {
 }
 
 // doRequest sends an HTTP request and handles the response
-func (c *Client) doRequest(method, endpoint string, data interface{}) (*interface{}, error) {
-	var response *interface{}
+func (c *Client) doRequest(method, endpoint string, data interface{}) (*map[string]interface{}, error) {
+	var response *map[string]interface{}
 	body := new(bytes.Buffer)
 	_ = json.NewEncoder(body).Encode(data)
 	requestUrl := BaseUrl + endpoint
@@ -71,20 +71,12 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	var cResp *RequestPaymentResponse
 	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, body)
 	if err != nil {
-		fmt.Printf("%v", err)
 		return cResp, err
 	}
-	respData, ok := (*resp).(RequestPaymentResponse)
-	if !ok {
-		return cResp, fmt.Errorf("unexpected response type")
-	}
-	cResp = &RequestPaymentResponse{
-		Status:               respData.Status,
-		RequestTransactionId: respData.RequestTransactionId,
-		Success:              respData.Success,
-		ResponseCode:         respData.ResponseCode,
-		TransactionId:        respData.TransactionId,
-		Message:              respData.Message,
+	respBytes, _ := json.Marshal(resp)
+	errr := json.Unmarshal(respBytes, &cResp)
+	if errr != nil {
+		return cResp, errr
 	}
 
 	return cResp, nil
@@ -109,17 +101,13 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	}
 	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, body)
 	if err != nil {
+		fmt.Printf("%v", resp)
 		return cResp, err
 	}
-	respData, ok := (*resp).(RequestDepositResponse)
-	if !ok {
-		return cResp, fmt.Errorf("unexpected response type")
-	}
-	cResp = &RequestDepositResponse{
-		RequestTransactionId: respData.RequestTransactionId,
-		Success:              respData.Success,
-		ResponseCode:         respData.ResponseCode,
-		ReferenceId:          respData.ReferenceId,
+	respBytes, _ := json.Marshal(resp)
+	errr := json.Unmarshal(respBytes, &cResp)
+	if errr != nil {
+		return cResp, errr
 	}
 
 	return cResp, nil
@@ -133,6 +121,11 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 	if err != nil {
 		return cResp, err
 	}
-	fmt.Printf("%v", resp)
+	respBytes, _ := json.Marshal(resp)
+	errr := json.Unmarshal(respBytes, &cResp)
+	if errr != nil {
+		return cResp, errr
+	}
+
 	return cResp, nil
 }
