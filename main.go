@@ -101,7 +101,6 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	}
 	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, body)
 	if err != nil {
-		fmt.Printf("%v", resp)
 		return cResp, err
 	}
 	respBytes, _ := json.Marshal(resp)
