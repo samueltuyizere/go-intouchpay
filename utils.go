@@ -33,7 +33,7 @@ type RequestPaymentParams struct {
 }
 
 type RequestPaymentResponse struct {
-	Status               uint   `json:"status"`
+	Status               string `json:"status"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	Success              bool   `json:"success"`
 	ResponseCode         string `json:"responsecode"`
@@ -82,6 +82,6 @@ type GetTransactionStatusParams struct {
 type GetTransactionStatusResponse struct {
 	Success      bool   `json:"success"`
 	ResponseCode string `json:"responsecode"`
-	Status       uint   `json:"status,omitempty"`
+	Status       string `json:"status,omitempty"`
 	Message      string `json:"message"`
 }
