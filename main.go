@@ -66,7 +66,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	formData := url.Values{}
 	formData.Set("username", c.Username)
 	formData.Set("timestamp", timestamp)
-	formData.Set("amount", strconv.FormatFloat(params.Amount, 'f', -1, 64))
+	formData.Set("amount", strconv.FormatUint(uint64(params.Amount), 10))
 	formData.Set("password", password)
 	formData.Set("mobilephoneno", params.MobilePhone)
 	formData.Set("requesttransactionid", params.RequestTransactionId)
@@ -98,7 +98,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	formData := url.Values{}
 	formData.Set("username", c.Username)
 	formData.Set("timestamp", timestamp)
-	formData.Set("amount", strconv.FormatFloat(params.Amount, 'f', -1, 64))
+	formData.Set("amount", strconv.FormatUint(uint64(params.Amount), 10))
 	formData.Set("withdrawcharge", strconv.Itoa(params.WithdrawCharge))
 	formData.Set("reason", params.Reason)
 	formData.Set("sid", strconv.Itoa(c.Sid))

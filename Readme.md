@@ -65,7 +65,7 @@ Request a payment from a subscriber. The transaction will be pending until the s
 ```go
 // Prepare payment parameters
 params := &Intouchpay.RequestPaymentParams{
-    Amount:               1000.0,                    // Amount to be paid
+    Amount:               1000,                     // Amount to be paid (positive integer, no decimals)
     MobilePhone:          "250788888888",            // Mobile phone number making the payment
     RequestTransactionId: "unique_txn_id_12345",     // Unique transaction ID from your system
 }
@@ -109,7 +109,7 @@ Send a deposit to a subscriber. This is processed immediately.
 ```go
 // Prepare deposit parameters
 params := &Intouchpay.RequestDepositParams{
-    Amount:               5000.0,                    // Amount to deposit
+    Amount:               5000,                     // Amount to deposit (positive integer, no decimals)
     WithdrawCharge:       0,                          // Set to 1 to include withdraw charges in amount
     Reason:               "Payment for services",     // Reason for deposit
     MobilePhone:          "250788888888",             // Mobile phone number receiving the deposit

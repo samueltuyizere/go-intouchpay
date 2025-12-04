@@ -27,9 +27,9 @@ type FailedRequestResponse struct {
 }
 
 type RequestPaymentParams struct {
-	Amount               float64 `json:"amount"` // Can be string, float, or integer per documentation
-	MobilePhone          string  `json:"mobilephone"`
-	RequestTransactionId string  `json:"requesttransactionid"`
+	Amount               uint   `json:"amount"` // Amount as a positive integer with no decimals
+	MobilePhone          string `json:"mobilephone"`
+	RequestTransactionId string `json:"requesttransactionid"`
 }
 
 type RequestPaymentResponse struct {
@@ -60,11 +60,11 @@ type BalanceResponse struct {
 }
 
 type RequestDepositParams struct {
-	Amount               float64 `json:"amount"`
-	WithdrawCharge       int     `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
-	Reason               string  `json:"reason"`
-	MobilePhone          string  `json:"mobilephone"`
-	RequestTransactionId string  `json:"requesttransactionid"`
+	Amount               uint   `json:"amount"` // Amount as a positive integer with no decimals
+	WithdrawCharge       int    `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
+	Reason               string `json:"reason"`
+	MobilePhone          string `json:"mobilephone"`
+	RequestTransactionId string `json:"requesttransactionid"`
 }
 
 type RequestDepositResponse struct {
