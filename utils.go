@@ -3,10 +3,11 @@ package Intouchpay
 import "net/http"
 
 const (
-	RequestPaymentEndpoint string = "/requestpayment/"
-	RequestDepositEndpoint string = "/requestdeposit/"
-	GetBalanceEndpoint     string = "/getbalance"
-	BaseUrl                string = "https://www.intouchpay.co.rw/api"
+	RequestPaymentEndpoint       string = "/requestpayment/"
+	RequestDepositEndpoint       string = "/requestdeposit/"
+	GetBalanceEndpoint           string = "/getbalance/"
+	GetTransactionStatusEndpoint string = "/gettransactionstatus/"
+	BaseUrl                      string = "https://www.intouchpay.co.rw/api"
 )
 
 // Client represents an IntouchPay client configured with authentication details
@@ -26,9 +27,9 @@ type FailedRequestResponse struct {
 }
 
 type RequestPaymentParams struct {
-	Amount               int    `json:"amount"`
-	MobilePhone          string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	Amount               float64 `json:"amount"` // Can be string, float, or integer per documentation
+	MobilePhone          string  `json:"mobilephone"`
+	RequestTransactionId string  `json:"requesttransactionid"`
 }
 
 type RequestPaymentResponse struct {
@@ -43,33 +44,44 @@ type RequestPaymentResponse struct {
 type RequestPaymentBody struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
-	Amount               int    `json:"amount"`
+	Amount               string `json:"amount"`
 	Password             string `json:"password"`
-	MobilePhone          string `json:"mobilephone"`
+	MobilePhoneNo        string `json:"mobilephoneno"`
 	RequestTransactionId string `json:"requesttransactionid"`
-	CallbackURL          string `json:"callbackurl"`
+	AccountNo            string `json:"accountno"`
+	CallbackURL          string `json:"callbackurl,omitempty"`
 }
 
 type BalanceResponse struct {
-	Balance string `json:"balance"`
-	Succes  bool   `json:"success"`
+	Balance      string `json:"balance"`
+	Success      bool   `json:"success"`
+	ResponseCode string `json:"responsecode,omitempty"`
+	Message      string `json:"message,omitempty"`
 }
 
 type RequestDepositParams struct {
-	Amount               int    `json:"amount"`
-	WithdrawCharge       int    `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
-	Reason               string `json:"reason"`
-	MobilePhone          string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	Amount               float64 `json:"amount"`
+	WithdrawCharge       int     `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
+	Reason               string  `json:"reason"`
+	MobilePhone          string  `json:"mobilephone"`
+	RequestTransactionId string  `json:"requesttransactionid"`
 }
 
 type RequestDepositResponse struct {
 	RequestTransactionId string `json:"requesttransactionid"`
-	ReferenceId          string `json:"referenceid"`
+	ReferenceId          string `json:"referenceid,omitempty"` // Only returned if successful
 	ResponseCode         string `json:"responsecode"`
 	Success              bool   `json:"success"`
 }
 
-type RequestData interface {
-	*RequestPaymentBody
+type GetTransactionStatusParams struct {
+	RequestTransactionId string `json:"requesttransactionid"`
+	TransactionId        string `json:"transactionid"`
+}
+
+type GetTransactionStatusResponse struct {
+	Success      bool   `json:"success"`
+	ResponseCode string `json:"responsecode"`
+	Status       string `json:"status,omitempty"`
+	Message      string `json:"message"`
 }

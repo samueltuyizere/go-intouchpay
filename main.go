@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -18,7 +20,7 @@ func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid
 		PartnerPassword: partnerPassword,
 		CallbackURL:     callbackUrl,
 		Sid:             sid,
-		HTTPClient:      &http.Client{},
+		HTTPClient:      &http.Client{Timeout: 60 * time.Second}, // API responds within 60 seconds per documentation
 	}
 }
 
@@ -32,14 +34,15 @@ func (c *Client) generatePassword(timestamp string) string {
 	return password
 }
 
-// doRequest sends an HTTP request and handles the response
-func (c *Client) doRequest(method, endpoint string, data interface{}) (*map[string]interface{}, error) {
+// doRequest sends an HTTP form POST request and handles the response
+func (c *Client) doRequest(endpoint string, formData url.Values) (*map[string]interface{}, error) {
 	var response *map[string]interface{}
-	body := new(bytes.Buffer)
-	_ = json.NewEncoder(body).Encode(data)
 	requestUrl := BaseUrl + endpoint
-	req, _ := http.NewRequest(method, requestUrl, body)
-	req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewBufferString(formData.Encode()))
+	if err != nil {
+		return response, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return response, err
@@ -56,20 +59,24 @@ func (c *Client) doRequest(method, endpoint string, data interface{}) (*map[stri
 
 // RequestPayment initiates a payment request
 func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentResponse, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	timestamp := now.Format("20060102150405")
 	password := c.generatePassword(timestamp)
-	body := RequestPaymentBody{
-		Username:             c.Username,
-		Timestamp:            timestamp,
-		Amount:               params.Amount,
-		Password:             password,
-		MobilePhone:          params.MobilePhone,
-		RequestTransactionId: params.RequestTransactionId,
-		CallbackURL:          c.CallbackURL,
+
+	formData := url.Values{}
+	formData.Set("username", c.Username)
+	formData.Set("timestamp", timestamp)
+	formData.Set("amount", strconv.FormatFloat(params.Amount, 'f', -1, 64))
+	formData.Set("password", password)
+	formData.Set("mobilephoneno", params.MobilePhone)
+	formData.Set("requesttransactionid", params.RequestTransactionId)
+	formData.Set("accountno", c.AccountNo)
+	if c.CallbackURL != "" {
+		formData.Set("callbackurl", c.CallbackURL)
 	}
+
 	var cResp *RequestPaymentResponse
-	resp, err := c.doRequest(http.MethodPost, RequestPaymentEndpoint, body)
+	resp, err := c.doRequest(RequestPaymentEndpoint, formData)
 	if err != nil {
 		return cResp, err
 	}
@@ -84,22 +91,24 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 
 // RequestDeposit initiates a deposit request
 func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositResponse, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	timestamp := now.Format("20060102150405")
 	password := c.generatePassword(timestamp)
+
+	formData := url.Values{}
+	formData.Set("username", c.Username)
+	formData.Set("timestamp", timestamp)
+	formData.Set("amount", strconv.FormatFloat(params.Amount, 'f', -1, 64))
+	formData.Set("withdrawcharge", strconv.Itoa(params.WithdrawCharge))
+	formData.Set("reason", params.Reason)
+	formData.Set("sid", strconv.Itoa(c.Sid))
+	formData.Set("password", password)
+	formData.Set("mobilephoneno", params.MobilePhone)
+	formData.Set("requesttransactionid", params.RequestTransactionId)
+	formData.Set("accountno", c.AccountNo)
+
 	var cResp *RequestDepositResponse
-	body := map[string]interface{}{
-		"username":             c.Username,
-		"timestamp":            timestamp,
-		"amount":               params.Amount,
-		"withdrawcharge":       params.WithdrawCharge,
-		"reason":               params.Reason,
-		"sid":                  c.Sid,
-		"password":             password,
-		"mobilephone":          params.MobilePhone,
-		"requesttransactionid": params.RequestTransactionId,
-	}
-	resp, err := c.doRequest(http.MethodPost, RequestDepositEndpoint, body)
+	resp, err := c.doRequest(RequestDepositEndpoint, formData)
 	if err != nil {
 		return cResp, err
 	}
@@ -114,9 +123,45 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 
 // GetBalance queries account balance
 func (c *Client) GetBalance() (*BalanceResponse, error) {
-	timestamp := time.Now()
+	now := time.Now().UTC()
+	timestamp := now.Format("20060102150405")
+	password := c.generatePassword(timestamp)
+
+	formData := url.Values{}
+	formData.Set("username", c.Username)
+	formData.Set("timestamp", timestamp)
+	formData.Set("accountno", c.AccountNo)
+	formData.Set("password", password)
+
 	var cResp *BalanceResponse
-	resp, err := c.doRequest(http.MethodGet, GetBalanceEndpoint, timestamp)
+	resp, err := c.doRequest(GetBalanceEndpoint, formData)
+	if err != nil {
+		return cResp, err
+	}
+	respBytes, _ := json.Marshal(resp)
+	errr := json.Unmarshal(respBytes, &cResp)
+	if errr != nil {
+		return cResp, errr
+	}
+
+	return cResp, nil
+}
+
+// GetTransactionStatus queries the status of a transaction
+func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetTransactionStatusResponse, error) {
+	now := time.Now().UTC()
+	timestamp := now.Format("20060102150405")
+	password := c.generatePassword(timestamp)
+
+	formData := url.Values{}
+	formData.Set("username", c.Username)
+	formData.Set("timestamp", timestamp)
+	formData.Set("requesttransactionid", params.RequestTransactionId)
+	formData.Set("transactionid", params.TransactionId)
+	formData.Set("password", password)
+
+	var cResp *GetTransactionStatusResponse
+	resp, err := c.doRequest(GetTransactionStatusEndpoint, formData)
 	if err != nil {
 		return cResp, err
 	}
