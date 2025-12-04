@@ -33,7 +33,7 @@ type RequestPaymentParams struct {
 }
 
 type RequestPaymentResponse struct {
-	Status               string `json:"status"`
+	Status               uint   `json:"status"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	Success              bool   `json:"success"`
 	ResponseCode         string `json:"responsecode"`
@@ -44,7 +44,7 @@ type RequestPaymentResponse struct {
 type RequestPaymentBody struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
-	Amount               string `json:"amount"`
+	Amount               uint   `json:"amount"`
 	Password             string `json:"password"`
 	MobilePhoneNo        string `json:"mobilephoneno"`
 	RequestTransactionId string `json:"requesttransactionid"`
@@ -53,14 +53,14 @@ type RequestPaymentBody struct {
 }
 
 type BalanceResponse struct {
-	Balance      string `json:"balance"`
-	Success      bool   `json:"success"`
-	ResponseCode string `json:"responsecode,omitempty"`
-	Message      string `json:"message,omitempty"`
+	Balance      float64 `json:"balance"`
+	Success      bool    `json:"success"`
+	ResponseCode string  `json:"responsecode,omitempty"`
+	Message      string  `json:"message,omitempty"`
 }
 
 type RequestDepositParams struct {
-	Amount               uint   `json:"amount"` // Amount as a positive integer with no decimals
+	Amount               uint   `json:"amount"`         // Amount as a positive integer with no decimals
 	WithdrawCharge       int    `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
 	Reason               string `json:"reason"`
 	MobilePhone          string `json:"mobilephone"`
@@ -82,6 +82,6 @@ type GetTransactionStatusParams struct {
 type GetTransactionStatusResponse struct {
 	Success      bool   `json:"success"`
 	ResponseCode string `json:"responsecode"`
-	Status       string `json:"status,omitempty"`
+	Status       uint   `json:"status,omitempty"`
 	Message      string `json:"message"`
 }
