@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/samueltuyizere/validate_rw_phone_numbers v1.0.1
 	github.com/stretchr/testify v1.8.4
 )

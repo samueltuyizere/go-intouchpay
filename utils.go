@@ -121,10 +121,20 @@ type GetTransactionStatusResponse struct {
 }
 
 func SanitizePhoneNumber(phoneNumber string) (string, error) {
-	isValid := validate_rw_phone_numbers.ValidateMtn(phoneNumber) || validate_rw_phone_numbers.ValidateAirtelTigo(phoneNumber)
-	if !isValid {
+	// Remove any existing country code prefix
+	cleanedNumber := phoneNumber
+	if len(phoneNumber) > 3 && phoneNumber[:3] == "250" {
+		cleanedNumber = phoneNumber[3:]
+	}
+
+	// Validate the number without country code
+	isValidMtn := validate_rw_phone_numbers.ValidateMtn(cleanedNumber)
+	isValidAirtelTigo := validate_rw_phone_numbers.ValidateAirtelTigo(cleanedNumber)
+	if !isValidMtn && !isValidAirtelTigo {
 		return "", errors.New("invalid phone number")
 	}
-	phoneNumber = fmt.Sprintf("250%s", phoneNumber)
-	return phoneNumber, nil
+
+	// Return with country code prefix
+	newNumber := fmt.Sprintf("25%s", cleanedNumber)
+	return newNumber, nil
 }
