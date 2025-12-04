@@ -36,7 +36,7 @@ type RequestPaymentResponse struct {
 	Status               string `json:"status"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	Success              bool   `json:"success"`
-	ResponseCode         string `json:"responsecode"`
+	ResponseCode         int    `json:"responsecode"`
 	TransactionId        string `json:"transactionid"`
 	Message              string `json:"message"`
 }
@@ -55,7 +55,7 @@ type RequestPaymentBody struct {
 type BalanceResponse struct {
 	Balance      float64 `json:"balance"`
 	Success      bool    `json:"success"`
-	ResponseCode string  `json:"responsecode,omitempty"`
+	ResponseCode int     `json:"responsecode,omitempty"`
 	Message      string  `json:"message,omitempty"`
 }
 
@@ -70,7 +70,7 @@ type RequestDepositParams struct {
 type RequestDepositResponse struct {
 	RequestTransactionId string `json:"requesttransactionid"`
 	ReferenceId          string `json:"referenceid,omitempty"` // Only returned if successful
-	ResponseCode         string `json:"responsecode"`
+	ResponseCode         int    `json:"responsecode"`
 	Success              bool   `json:"success"`
 }
 
@@ -81,7 +81,7 @@ type GetTransactionStatusParams struct {
 
 type GetTransactionStatusResponse struct {
 	Success      bool   `json:"success"`
-	ResponseCode string `json:"responsecode"`
+	ResponseCode int    `json:"responsecode"`
 	Status       string `json:"status,omitempty"`
 	Message      string `json:"message"`
 }
