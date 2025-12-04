@@ -46,10 +46,38 @@ type RequestPaymentBody struct {
 	Timestamp            string `json:"timestamp"`
 	Amount               uint   `json:"amount"`
 	Password             string `json:"password"`
-	MobilePhoneNo        string `json:"mobilephoneno"`
+	MobilePhone          string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	AccountNo            string `json:"accountno"`
 	CallbackURL          string `json:"callbackurl,omitempty"`
+}
+
+type RequestDepositBody struct {
+	Username             string `json:"username"`
+	Timestamp            string `json:"timestamp"`
+	Amount               uint   `json:"amount"`
+	WithdrawCharge       int    `json:"withdrawcharge"`
+	Reason               string `json:"reason"`
+	Sid                  int    `json:"sid"`
+	Password             string `json:"password"`
+	MobilePhoneNo        string `json:"mobilephoneno"`
+	RequestTransactionId string `json:"requesttransactionid"`
+	AccountNo            string `json:"accountno"`
+}
+
+type GetBalanceBody struct {
+	Username  string `json:"username"`
+	Timestamp string `json:"timestamp"`
+	AccountNo string `json:"accountno"`
+	Password  string `json:"password"`
+}
+
+type GetTransactionStatusBody struct {
+	Username             string `json:"username"`
+	Timestamp            string `json:"timestamp"`
+	RequestTransactionId string `json:"requesttransactionid"`
+	TransactionId        string `json:"transactionid"`
+	Password             string `json:"password"`
 }
 
 type BalanceResponse struct {
