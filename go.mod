@@ -8,4 +8,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/stretchr/testify v1.8.4
+require (
+	github.com/samueltuyizere/validate_rw_phone_numbers v1.0.1
+	github.com/stretchr/testify v1.8.4
+)

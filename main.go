@@ -63,6 +63,10 @@ func (c *Client) doRequest(endpoint string, requestBody interface{}) (*map[strin
 
 // RequestPayment initiates a payment request
 func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentResponse, error) {
+	phoneNumber, err := SanitizePhoneNumber(params.MobilePhone)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 	timestamp := now.Format("20060102150405")
 	password := c.generatePassword(timestamp)
@@ -72,7 +76,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 		Timestamp:            timestamp,
 		Amount:               params.Amount,
 		Password:             password,
-		MobilePhone:          params.MobilePhone,
+		MobilePhone:          phoneNumber,
 		RequestTransactionId: params.RequestTransactionId,
 		AccountNo:            c.AccountNo,
 	}
@@ -96,6 +100,10 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 
 // RequestDeposit initiates a deposit request
 func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositResponse, error) {
+	phoneNumber, err := SanitizePhoneNumber(params.MobilePhone)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 	timestamp := now.Format("20060102150405")
 	password := c.generatePassword(timestamp)
@@ -108,7 +116,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 		Reason:               params.Reason,
 		Sid:                  c.Sid,
 		Password:             password,
-		MobilePhoneNo:        params.MobilePhone,
+		MobilePhoneNo:        phoneNumber,
 		RequestTransactionId: params.RequestTransactionId,
 		AccountNo:            c.AccountNo,
 	}

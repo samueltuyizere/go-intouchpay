@@ -1,6 +1,12 @@
 package Intouchpay
 
-import "net/http"
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"github.com/samueltuyizere/validate_rw_phone_numbers"
+)
 
 const (
 	RequestPaymentEndpoint       string = "/requestpayment/"
@@ -36,7 +42,7 @@ type RequestPaymentResponse struct {
 	Status               string `json:"status"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	Success              bool   `json:"success"`
-	ResponseCode         int    `json:"responsecode"`
+	ResponseCode         string `json:"responsecode"`
 	TransactionId        string `json:"transactionid"`
 	Message              string `json:"message"`
 }
@@ -112,4 +118,13 @@ type GetTransactionStatusResponse struct {
 	ResponseCode int    `json:"responsecode"`
 	Status       string `json:"status,omitempty"`
 	Message      string `json:"message"`
+}
+
+func SanitizePhoneNumber(phoneNumber string) (string, error) {
+	isValid := validate_rw_phone_numbers.ValidateMtn(phoneNumber) || validate_rw_phone_numbers.ValidateAirtelTigo(phoneNumber)
+	if !isValid {
+		return "", errors.New("invalid phone number")
+	}
+	phoneNumber = fmt.Sprintf("250%s", phoneNumber)
+	return phoneNumber, nil
 }
