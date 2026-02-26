@@ -124,7 +124,7 @@ func SanitizePhoneNumber(phoneNumber string) (string, error) {
 	// Remove any existing country code prefix
 	cleanedNumber := phoneNumber
 	if len(phoneNumber) > 3 && phoneNumber[:3] == "250" {
-		cleanedNumber = phoneNumber[3:]
+		return cleanedNumber, nil
 	}
 
 	// Validate the number without country code
