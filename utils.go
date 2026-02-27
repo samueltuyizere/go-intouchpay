@@ -104,7 +104,7 @@ type RequestDepositParams struct {
 type RequestDepositResponse struct {
 	RequestTransactionId string `json:"requesttransactionid"`
 	ReferenceId          string `json:"referenceid,omitempty"` // Only returned if successful
-	ResponseCode         int    `json:"responsecode"`
+	ResponseCode         string `json:"responsecode"`
 	Success              bool   `json:"success"`
 }
 
