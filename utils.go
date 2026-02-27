@@ -66,7 +66,7 @@ type RequestDepositBody struct {
 	Reason               string `json:"reason"`
 	Sid                  int    `json:"sid"`
 	Password             string `json:"password"`
-	MobilePhoneNo        string `json:"mobilephoneno"`
+	MobilePhoneNo        string `json:"mobilephone"`
 	RequestTransactionId string `json:"requesttransactionid"`
 	AccountNo            string `json:"accountno"`
 }

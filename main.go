@@ -51,7 +51,13 @@ func (c *Client) doRequest(endpoint string, requestBody interface{}) (*map[strin
 	if err != nil {
 		return response, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			// Log the error if needed, but don't fail the request
+			// The response body has already been read at this point
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, err)
 	}
