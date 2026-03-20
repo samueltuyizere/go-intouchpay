@@ -410,12 +410,12 @@ This package follows deep module design principles for testability:
 ┌─────────────────────────────────────────────────────┐
 │                     Client                          │
 │  ┌──────────────┐  ┌──────────────┐                │
-│  │ Authenticator│  │  HTTPClient  │                │
+│  │ Authenticator│  │ APIRequester │                │
 │  │  (interface) │  │  (interface) │                │
 │  └──────────────┘  └──────────────┘                │
 │         ↓                  ↓                        │
 │  ┌──────────────┐  ┌──────────────┐                │
-│  │  sha256Auth  │  │defaultHTTPClient│              │
+│  │  sha256Auth  │  │ defaultHTTPClient │            │
 │  │ (production) │  │ (production) │                │
 │  └──────────────┘  └──────────────┘                │
 └─────────────────────────────────────────────────────┘
@@ -426,7 +426,7 @@ This package follows deep module design principles for testability:
 - **Authenticator** - Generates authentication credentials
   - `Authenticate() Credentials`
 
-- **HTTPClient** - Makes HTTP requests to the API
+- **APIRequester** - Makes HTTP requests to the API
   - `Do(endpoint string, body interface{}) (*map[string]interface{}, error)`
 
 ### Testing-Friendly Constructors
@@ -782,7 +782,7 @@ client := Intouchpay.NewClientWithOptions(
 
 **Architecture Improvements:**
 - Extracted authentication into `Authenticator` interface for testability
-- Extracted HTTP layer into `HTTPClient` interface for mocking
+- Extracted HTTP layer into `APIRequester` interface for mocking
 - Added typed errors: `APIError` and `ValidationError`
 - Added `PhoneValidator` struct for phone number validation
 - Added option pattern for flexible client configuration

@@ -57,9 +57,9 @@ func NewClientWithOptions(username, accountNumber, partnerPassword string, opts 
 	return c
 }
 
-// NewClientWithHTTPClient creates a new IntouchPay client with a custom HTTPClient interface.
+// NewClientWithHTTPClient creates a new IntouchPay client with a custom APIRequester interface.
 // Use this for testing with a mock HTTP client.
-func NewClientWithHTTPClient(auth Authenticator, httpClient HTTPClient, opts ...Option) *Client {
+func NewClientWithHTTPClient(auth Authenticator, httpClient APIRequester, opts ...Option) *Client {
 	c := &Client{
 		auth:       auth,
 		httpClient: httpClient,
@@ -96,7 +96,10 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	if err != nil {
 		return cResp, err
 	}
-	respBytes, _ := json.Marshal(resp)
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		return nil, NewMarshalError("request payment response", err)
+	}
 	err = json.Unmarshal(respBytes, &cResp)
 	if err != nil {
 		return cResp, err
@@ -131,7 +134,10 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	if err != nil {
 		return cResp, err
 	}
-	respBytes, _ := json.Marshal(resp)
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		return nil, NewMarshalError("request deposit response", err)
+	}
 	err = json.Unmarshal(respBytes, &cResp)
 	if err != nil {
 		return cResp, err
@@ -155,7 +161,10 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 	if err != nil {
 		return cResp, err
 	}
-	respBytes, _ := json.Marshal(resp)
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		return nil, NewMarshalError("balance response", err)
+	}
 	err = json.Unmarshal(respBytes, &cResp)
 	if err != nil {
 		return cResp, err
@@ -180,7 +189,10 @@ func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetT
 	if err != nil {
 		return cResp, err
 	}
-	respBytes, _ := json.Marshal(resp)
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		return nil, NewMarshalError("transaction status response", err)
+	}
 	err = json.Unmarshal(respBytes, &cResp)
 	if err != nil {
 		return cResp, err

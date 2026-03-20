@@ -11,7 +11,7 @@ type Client struct {
 	Sid             int          // Service ID. Set to 1 For Bulk Payments, can only be 0 or 1
 	HTTPClient      *http.Client // Kept for backward compatibility
 	auth            Authenticator
-	httpClient      HTTPClient // Internal HTTP client interface
+	httpClient      APIRequester // Internal HTTP client interface
 }
 
 // FailedRequestResponse represents a failed API response

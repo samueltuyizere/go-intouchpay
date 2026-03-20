@@ -78,6 +78,36 @@ func IsValidationError(err error) bool {
 	return ok
 }
 
+// MarshalError represents an error during JSON marshaling/unmarshaling
+type MarshalError struct {
+	Context string
+	Err     error
+}
+
+// Error implements the error interface
+func (e *MarshalError) Error() string {
+	return fmt.Sprintf("marshal error: %s: %v", e.Context, e.Err)
+}
+
+// Unwrap returns the underlying error
+func (e *MarshalError) Unwrap() error {
+	return e.Err
+}
+
+// NewMarshalError creates a MarshalError
+func NewMarshalError(context string, err error) *MarshalError {
+	return &MarshalError{
+		Context: context,
+		Err:     err,
+	}
+}
+
+// IsMarshalError checks if an error is a MarshalError
+func IsMarshalError(err error) bool {
+	_, ok := err.(*MarshalError)
+	return ok
+}
+
 // HTTPStatus returns the HTTP status code if the error is an APIError
 func HTTPStatus(err error) int {
 	if apiErr, ok := err.(*APIError); ok {

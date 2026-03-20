@@ -46,8 +46,8 @@ func WithAuthenticator(auth Authenticator) Option {
 	}
 }
 
-// WithHTTPClientInterface sets a custom HTTPClient interface implementation
-func WithHTTPClientInterface(httpClient HTTPClient) Option {
+// WithHTTPClientInterface sets a custom APIRequester interface implementation
+func WithHTTPClientInterface(httpClient APIRequester) Option {
 	return func(c *Client) {
 		c.httpClient = httpClient
 	}

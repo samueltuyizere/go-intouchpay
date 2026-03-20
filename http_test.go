@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// MockHTTPClient implements HTTPClient for testing
+// MockHTTPClient implements APIRequester for testing
 type MockHTTPClient struct {
 	Response *map[string]interface{}
 	Error    error

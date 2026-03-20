@@ -8,20 +8,20 @@ import (
 	"net/http"
 )
 
-// HTTPClient defines the interface for making HTTP requests to the IntouchPay API
-type HTTPClient interface {
+// APIRequester defines the interface for making HTTP requests to the IntouchPay API
+type APIRequester interface {
 	// Do sends a POST request to the given endpoint with the provided body
 	Do(endpoint string, body interface{}) (*map[string]interface{}, error)
 }
 
-// defaultHTTPClient implements HTTPClient using net/http
+// defaultHTTPClient implements APIRequester using net/http
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
 }
 
 // NewHTTPClient creates a new HTTP client with the provided configuration
-func NewHTTPClient(httpClient *http.Client, baseURL string) HTTPClient {
+func NewHTTPClient(httpClient *http.Client, baseURL string) APIRequester {
 	return &defaultHTTPClient{
 		client:  httpClient,
 		baseURL: baseURL,
