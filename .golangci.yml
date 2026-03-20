@@ -1,0 +1,37 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - govet         # Go vet
+    - ineffassign   # Detect unused assignments
+    - staticcheck   # Static analysis (includes gosimple rules)
+    - unused        # Find unused code
+    - misspell      # Check spelling
+    - revive        # General linter
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+            - sayRepetitiveInsteadOfStutters
+
+  exclusions:
+    rules:
+      # Allow underscore in test files
+      - path: _test\.go
+        linters:
+          - revive

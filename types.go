@@ -1,20 +1,6 @@
 package Intouchpay
 
-import (
-	"errors"
-	"fmt"
-	"net/http"
-
-	"github.com/samueltuyizere/validate_rw_phone_numbers"
-)
-
-const (
-	RequestPaymentEndpoint       string = "/requestpayment/"
-	RequestDepositEndpoint       string = "/requestdeposit/"
-	GetBalanceEndpoint           string = "/getbalance/"
-	GetTransactionStatusEndpoint string = "/gettransactionstatus/"
-	BaseUrl                      string = "https://www.intouchpay.co.rw/api"
-)
+import "net/http"
 
 // Client represents an IntouchPay client configured with authentication details
 type Client struct {
@@ -22,42 +8,49 @@ type Client struct {
 	AccountNo       string
 	PartnerPassword string
 	CallbackURL     string
-	Sid             int // Service ID. Set to 1 For Bulk Payments, can only be 0 or 1
-	HTTPClient      *http.Client
+	Sid             int          // Service ID. Set to 1 For Bulk Payments, can only be 0 or 1
+	HTTPClient      *http.Client // Kept for backward compatibility
+	auth            Authenticator
+	httpClient      APIRequester // Internal HTTP client interface
 }
 
+// FailedRequestResponse represents a failed API response
 type FailedRequestResponse struct {
 	Success      bool   `json:"success"`
 	ResponseCode string `json:"responsecode"`
 	Message      string `json:"message"`
 }
 
+// RequestPaymentParams represents parameters for RequestPayment
 type RequestPaymentParams struct {
 	Amount               uint   `json:"amount"` // Amount as a positive integer with no decimals
 	MobilePhone          string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
 }
 
+// RequestPaymentResponse represents the response from RequestPayment
 type RequestPaymentResponse struct {
 	Status               string `json:"status"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
 	Success              bool   `json:"success"`
 	ResponseCode         string `json:"responsecode"`
-	TransactionId        string `json:"transactionid"`
+	TransactionID        string `json:"transactionid"`
 	Message              string `json:"message"`
 }
 
+// RequestPaymentBody represents the request body for RequestPayment
 type RequestPaymentBody struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
 	Amount               uint   `json:"amount"`
 	Password             string `json:"password"`
 	MobilePhone          string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
 	AccountNo            string `json:"accountno"`
 	CallbackURL          string `json:"callbackurl,omitempty"`
 }
 
+// RequestDepositBody represents the request body for RequestDeposit
 type RequestDepositBody struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
@@ -67,10 +60,11 @@ type RequestDepositBody struct {
 	Sid                  int    `json:"sid"`
 	Password             string `json:"password"`
 	MobilePhoneNo        string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
 	AccountNo            string `json:"accountno"`
 }
 
+// GetBalanceBody represents the request body for GetBalance
 type GetBalanceBody struct {
 	Username  string `json:"username"`
 	Timestamp string `json:"timestamp"`
@@ -78,14 +72,16 @@ type GetBalanceBody struct {
 	Password  string `json:"password"`
 }
 
+// GetTransactionStatusBody represents the request body for GetTransactionStatus
 type GetTransactionStatusBody struct {
 	Username             string `json:"username"`
 	Timestamp            string `json:"timestamp"`
-	RequestTransactionId string `json:"requesttransactionid"`
-	TransactionId        string `json:"transactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
+	TransactionID        string `json:"transactionid"`
 	Password             string `json:"password"`
 }
 
+// BalanceResponse represents the response from GetBalance
 type BalanceResponse struct {
 	Balance      float64 `json:"balance"`
 	Success      bool    `json:"success"`
@@ -93,48 +89,33 @@ type BalanceResponse struct {
 	Message      string  `json:"message,omitempty"`
 }
 
+// RequestDepositParams represents parameters for RequestDeposit
 type RequestDepositParams struct {
 	Amount               uint   `json:"amount"`         // Amount as a positive integer with no decimals
 	WithdrawCharge       int    `json:"withdrawcharge"` // Set to 1 to include Withdraw Charges in amount sent to subscriber
 	Reason               string `json:"reason"`
 	MobilePhone          string `json:"mobilephone"`
-	RequestTransactionId string `json:"requesttransactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
 }
 
+// RequestDepositResponse represents the response from RequestDeposit
 type RequestDepositResponse struct {
-	RequestTransactionId string `json:"requesttransactionid"`
-	ReferenceId          string `json:"referenceid,omitempty"` // Only returned if successful
+	RequestTransactionID string `json:"requesttransactionid"`
+	ReferenceID          string `json:"referenceid,omitempty"` // Only returned if successful
 	ResponseCode         string `json:"responsecode"`
 	Success              bool   `json:"success"`
 }
 
+// GetTransactionStatusParams represents parameters for GetTransactionStatus
 type GetTransactionStatusParams struct {
-	RequestTransactionId string `json:"requesttransactionid"`
-	TransactionId        string `json:"transactionid"`
+	RequestTransactionID string `json:"requesttransactionid"`
+	TransactionID        string `json:"transactionid"`
 }
 
+// GetTransactionStatusResponse represents the response from GetTransactionStatus
 type GetTransactionStatusResponse struct {
 	Success      bool   `json:"success"`
 	ResponseCode int    `json:"responsecode"`
 	Status       string `json:"status,omitempty"`
 	Message      string `json:"message"`
-}
-
-func SanitizePhoneNumber(phoneNumber string) (string, error) {
-	// Remove any existing country code prefix
-	cleanedNumber := phoneNumber
-	if len(phoneNumber) > 3 && phoneNumber[:3] == "250" {
-		return cleanedNumber, nil
-	}
-
-	// Validate the number without country code
-	isValidMtn := validate_rw_phone_numbers.ValidateMtn(cleanedNumber)
-	isValidAirtelTigo := validate_rw_phone_numbers.ValidateAirtelTigo(cleanedNumber)
-	if !isValidMtn && !isValidAirtelTigo {
-		return "", errors.New("invalid phone number")
-	}
-
-	// Return with country code prefix
-	newNumber := fmt.Sprintf("25%s", cleanedNumber)
-	return newNumber, nil
 }
