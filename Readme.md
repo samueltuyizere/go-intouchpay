@@ -11,7 +11,9 @@ A Go package for integrating with the IntouchPay Payments Gateway API. This pack
 - ✅ Full API v1.2 compliance
 - ✅ Automatic password generation using SHA256
 - ✅ UTC timestamp handling
-- ✅ Form-encoded POST requests (as per API specification)
+- ✅ **Testable architecture** - Mockable authentication and HTTP layers
+- ✅ **Option pattern** - Flexible client configuration
+- ✅ **Typed errors** - APIError and ValidationError types
 
 ## Installation
 
@@ -33,6 +35,8 @@ Before using this package, you need to have:
 ## Quick Start
 
 ### 1. Create a Client
+
+#### Basic Usage
 
 ```go
 package main
@@ -57,6 +61,28 @@ func main() {
     // Use the client to make API calls...
 }
 ```
+
+#### With Options Pattern
+
+For more flexible configuration, use the options pattern:
+
+```go
+client := Intouchpay.NewClientWithOptions(
+    "your_username",
+    "your_account_number",
+    "your_partner_password",
+    Intouchpay.WithCallbackURL("https://yourdomain.com/callback"),
+    Intouchpay.WithSid(0),
+    Intouchpay.WithTimeout(30 * time.Second),
+)
+```
+
+Available options:
+- `WithTimeout(duration)` - Set HTTP client timeout
+- `WithHTTPClient(*http.Client)` - Use a custom HTTP client
+- `WithCallbackURL(url)` - Set callback URL
+- `WithSid(sid)` - Set service ID
+- `WithAuthenticator(auth)` - Use a custom authenticator (for testing)
 
 ### 2. Request Payment (Receive Payment)
 
@@ -207,6 +233,172 @@ if status.Success {
 }
 ```
 
+## Testing
+
+### Mock Authentication
+
+For testing without real credentials, use a mock authenticator:
+
+```go
+// Create a mock authenticator
+type MockAuthenticator struct {
+    Creds Intouchpay.Credentials
+}
+
+func (m *MockAuthenticator) Authenticate() Intouchpay.Credentials {
+    return m.Creds
+}
+
+// Use it in tests
+mockAuth := &MockAuthenticator{
+    Creds: Intouchpay.Credentials{
+        Username:  "test_user",
+        Timestamp: "20260320120000",
+        Password:  "test_hash",
+    },
+}
+
+client := Intouchpay.NewClientWithAuth(mockAuth)
+```
+
+### Mock HTTP Client
+
+For testing without network calls, use a mock HTTP client:
+
+```go
+// Create a mock HTTP client
+type MockHTTPClient struct {
+    Response *map[string]interface{}
+    Error    error
+}
+
+func (m *MockHTTPClient) Do(endpoint string, body interface{}) (*map[string]interface{}, error) {
+    return m.Response, m.Error
+}
+
+// Use it in tests
+mockHTTP := &MockHTTPClient{
+    Response: &map[string]interface{}{
+        "success": true,
+        "balance": 10000.50,
+    },
+}
+
+client := Intouchpay.NewClientWithHTTPClient(mockAuth, mockHTTP)
+```
+
+### Running Tests
+
+```bash
+go test ./...
+```
+
+Run with coverage:
+
+```bash
+go test -cover ./...
+```
+
+## Error Handling
+
+### Typed Errors
+
+The package provides typed errors for better error handling:
+
+```go
+response, err := client.RequestPayment(params)
+if err != nil {
+    // Check for API errors
+    if Intouchpay.IsAPIError(err) {
+        apiErr := err.(*Intouchpay.APIError)
+        log.Printf("API Error: %d - %s", apiErr.StatusCode, apiErr.Status)
+    }
+    
+    // Check for validation errors
+    if Intouchpay.IsValidationError(err) {
+        valErr := err.(*Intouchpay.ValidationError)
+        log.Printf("Validation Error: %s - %s", valErr.Field, valErr.Message)
+    }
+    
+    return
+}
+
+if !response.Success {
+    // Handle API-level errors
+    switch response.ResponseCode {
+    case "2400":
+        log.Println("Duplicate transaction ID")
+    case "1005":
+        log.Println("Insufficient funds")
+    case "1002":
+        log.Println("Mobile number not registered")
+    default:
+        log.Printf("Payment failed: %s", response.Message)
+    }
+    return
+}
+
+// Success case
+log.Println("Payment request successful")
+```
+
+### Error Types
+
+- **APIError** - Returned when the API returns a non-200 status code
+  - `StatusCode` - HTTP status code
+  - `Status` - HTTP status text
+  - `Response` - Parsed API response
+  - `Message` - Error message
+
+- **ValidationError** - Returned for client-side validation failures
+  - `Field` - The field that failed validation
+  - `Message` - Error message
+
+## Architecture
+
+This package follows deep module design principles for testability:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     Client                          │
+│  ┌──────────────┐  ┌──────────────┐                │
+│  │ Authenticator│  │  HTTPClient  │                │
+│  │  (interface) │  │  (interface) │                │
+│  └──────────────┘  └──────────────┘                │
+│         ↓                  ↓                        │
+│  ┌──────────────┐  ┌──────────────┐                │
+│  │  sha256Auth  │  │defaultHTTPClient│              │
+│  │ (production) │  │ (production) │                │
+│  └──────────────┘  └──────────────┘                │
+└─────────────────────────────────────────────────────┘
+```
+
+### Interfaces
+
+- **Authenticator** - Generates authentication credentials
+  - `Authenticate() Credentials`
+
+- **HTTPClient** - Makes HTTP requests to the API
+  - `Do(endpoint string, body interface{}) (*map[string]interface{}, error)`
+
+### Testing-Friendly Constructors
+
+```go
+// With mock authenticator
+client := Intouchpay.NewClientWithAuth(mockAuth)
+
+// With mock HTTP client
+client := Intouchpay.NewClientWithHTTPClient(mockAuth, mockHTTP)
+
+// With options
+client := Intouchpay.NewClientWithOptions(
+    "username", "account", "password",
+    Intouchpay.WithTimeout(30*time.Second),
+    Intouchpay.WithAuthenticator(mockAuth),
+    Intouchpay.WithHTTPClientInterface(mockHTTP),
+)
+```
+
 ## Handling Callbacks (Webhooks)
 
 When you initiate a payment request, IntouchPay will send a POST request to your callback URL with the transaction status. You need to implement an endpoint to receive these callbacks.
@@ -331,37 +523,6 @@ func main() {
 | 3100 | Transaction Doesn't Exist                      |
 | 3200 | Missing Request Transaction ID Information     |
 
-## Error Handling
-
-Always check for errors and response codes:
-
-```go
-response, err := client.RequestPayment(params)
-if err != nil {
-    // Handle network or API errors
-    log.Printf("Error: %v", err)
-    return
-}
-
-if !response.Success {
-    // Handle API-level errors
-    switch response.ResponseCode {
-    case "2400":
-        log.Println("Duplicate transaction ID")
-    case "1005":
-        log.Println("Insufficient funds")
-    case "1002":
-        log.Println("Mobile number not registered")
-    default:
-        log.Printf("Payment failed: %s", response.Message)
-    }
-    return
-}
-
-// Success case
-log.Println("Payment request successful")
-```
-
 ## Configuration
 
 ### Service ID (SID)
@@ -390,6 +551,17 @@ The package automatically generates passwords using SHA256 encryption:
 password = SHA256(username + accountno + partnerpassword + timestamp)
 ```
 
+### Default Timeout
+
+The default HTTP client timeout is **60 seconds**. You can customize this with:
+
+```go
+client := Intouchpay.NewClientWithOptions(
+    "username", "account", "password",
+    Intouchpay.WithTimeout(30 * time.Second),
+)
+```
+
 ## Complete Example
 
 ```go
@@ -414,7 +586,7 @@ func main() {
 
     // Example 1: Request Payment
     paymentParams := &Intouchpay.RequestPaymentParams{
-        Amount:               1000.0,
+        Amount:               1000,
         MobilePhone:          "250788888888",
         RequestTransactionId: "txn_001",
     }
@@ -434,7 +606,7 @@ func main() {
 
     // Example 3: Request Deposit
     depositParams := &Intouchpay.RequestDepositParams{
-        Amount:               5000.0,
+        Amount:               5000,
         WithdrawCharge:       0,
         Reason:               "Payment for services",
         MobilePhone:          "250788888888",
@@ -461,14 +633,6 @@ func main() {
 }
 ```
 
-## Testing
-
-Run the test suite:
-
-```bash
-go test ./...
-```
-
 ## API Documentation
 
 This package implements the IntouchPay API v1.2. For more details, refer to the official IntouchPay API documentation.
@@ -488,6 +652,35 @@ For issues and questions:
 - Open an issue on GitHub
 - Contact IntouchPay support for API-related questions
 
-## Version
+## Changelog
 
-Current version: **v0.1.2**
+### v2.0.0
+
+**Architecture Improvements:**
+- Extracted authentication into `Authenticator` interface for testability
+- Extracted HTTP layer into `HTTPClient` interface for mocking
+- Added typed errors: `APIError` and `ValidationError`
+- Added `PhoneValidator` struct for phone number validation
+- Added option pattern for flexible client configuration
+- Fixed timeout inconsistency (now 60 seconds default)
+
+**New Constructors:**
+- `NewClientWithOptions()` - Flexible configuration with options
+- `NewClientWithAuth()` - Custom authenticator for testing
+- `NewClientWithHTTPClient()` - Custom HTTP client for testing
+
+**New Options:**
+- `WithTimeout()` - Set HTTP timeout
+- `WithHTTPClient()` - Use custom HTTP client
+- `WithCallbackURL()` - Set callback URL
+- `WithSid()` - Set service ID
+- `WithAuthenticator()` - Use custom authenticator
+- `WithHTTPClientInterface()` - Use mock HTTP client
+
+**Testing:**
+- Added comprehensive test suite (41 tests)
+- Full coverage of authentication, HTTP layer, phone validation, errors
+
+### v0.1.2
+
+Initial release with basic API functionality.
