@@ -45,3 +45,10 @@ func WithAuthenticator(auth Authenticator) Option {
 		c.auth = auth
 	}
 }
+
+// WithHTTPClientInterface sets a custom HTTPClient interface implementation
+func WithHTTPClientInterface(httpClient HTTPClient) Option {
+	return func(c *Client) {
+		c.httpClient = httpClient
+	}
+}

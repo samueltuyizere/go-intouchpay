@@ -1,9 +1,7 @@
 package Intouchpay
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -11,6 +9,7 @@ import (
 // This is a convenience constructor that creates a default authenticator.
 func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid int) *Client {
 	auth := NewAuthenticator(username, accountNumber, partnerPassword)
+	httpClient := &http.Client{Timeout: DefaultTimeout}
 	c := &Client{
 		Username:        username,
 		AccountNo:       accountNumber,
@@ -18,7 +17,8 @@ func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid
 		CallbackURL:     callbackUrl,
 		Sid:             sid,
 		auth:            auth,
-		HTTPClient:      &http.Client{Timeout: DefaultTimeout},
+		HTTPClient:      httpClient,
+		httpClient:      NewHTTPClient(httpClient, BaseUrl),
 	}
 	return c
 }
@@ -26,9 +26,11 @@ func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid
 // NewClientWithAuth creates a new IntouchPay client with a custom authenticator.
 // Use this for testing or when you need custom authentication behavior.
 func NewClientWithAuth(auth Authenticator, opts ...Option) *Client {
+	httpClient := &http.Client{Timeout: DefaultTimeout}
 	c := &Client{
 		auth:       auth,
-		HTTPClient: &http.Client{Timeout: DefaultTimeout},
+		HTTPClient: httpClient,
+		httpClient: NewHTTPClient(httpClient, BaseUrl),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -40,12 +42,14 @@ func NewClientWithAuth(auth Authenticator, opts ...Option) *Client {
 // Use this for flexible configuration including custom HTTP client, timeout, etc.
 func NewClientWithOptions(username, accountNumber, partnerPassword string, opts ...Option) *Client {
 	auth := NewAuthenticator(username, accountNumber, partnerPassword)
+	httpClient := &http.Client{Timeout: DefaultTimeout}
 	c := &Client{
 		Username:        username,
 		AccountNo:       accountNumber,
 		PartnerPassword: partnerPassword,
 		auth:            auth,
-		HTTPClient:      &http.Client{Timeout: DefaultTimeout},
+		HTTPClient:      httpClient,
+		httpClient:      NewHTTPClient(httpClient, BaseUrl),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -53,39 +57,17 @@ func NewClientWithOptions(username, accountNumber, partnerPassword string, opts 
 	return c
 }
 
-// doRequest sends an HTTP JSON POST request and handles the response
-func (c *Client) doRequest(endpoint string, requestBody interface{}) (*map[string]interface{}, error) {
-	var response *map[string]interface{}
-	requestUrl := BaseUrl + endpoint
-
-	jsonData, err := json.Marshal(requestBody)
-	if err != nil {
-		return response, fmt.Errorf("failed to marshal request body: %w", err)
+// NewClientWithHTTPClient creates a new IntouchPay client with a custom HTTPClient interface.
+// Use this for testing with a mock HTTP client.
+func NewClientWithHTTPClient(auth Authenticator, httpClient HTTPClient, opts ...Option) *Client {
+	c := &Client{
+		auth:       auth,
+		httpClient: httpClient,
 	}
-
-	req, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return response, err
+	for _, opt := range opts {
+		opt(c)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return response, err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			// Log the error if needed, but don't fail the request
-			// The response body has already been read at this point
-			fmt.Printf("Warning: failed to close response body: %v\n", err)
-		}
-	}()
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return response, newAPIError(resp.StatusCode, resp.Status, *response)
-	}
-	return response, nil
+	return c
 }
 
 // RequestPayment initiates a payment request
@@ -110,7 +92,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	}
 
 	var cResp *RequestPaymentResponse
-	resp, err := c.doRequest(RequestPaymentEndpoint, requestBody)
+	resp, err := c.httpClient.Do(RequestPaymentEndpoint, requestBody)
 	if err != nil {
 		return cResp, err
 	}
@@ -145,7 +127,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	}
 
 	var cResp *RequestDepositResponse
-	resp, err := c.doRequest(RequestDepositEndpoint, requestBody)
+	resp, err := c.httpClient.Do(RequestDepositEndpoint, requestBody)
 	if err != nil {
 		return cResp, err
 	}
@@ -169,7 +151,32 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 	}
 
 	var cResp *BalanceResponse
-	resp, err := c.doRequest(GetBalanceEndpoint, requestBody)
+	resp, err := c.httpClient.Do(GetBalanceEndpoint, requestBody)
+	if err != nil {
+		return cResp, err
+	}
+	respBytes, _ := json.Marshal(resp)
+	err = json.Unmarshal(respBytes, &cResp)
+	if err != nil {
+		return cResp, err
+	}
+
+	return cResp, nil
+}
+
+// GetTransactionStatus queries the status of a transaction
+func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetTransactionStatusResponse, error) {
+	creds := c.auth.Authenticate()
+	requestBody := GetTransactionStatusBody{
+		Username:             creds.Username,
+		Timestamp:            creds.Timestamp,
+		RequestTransactionId: params.RequestTransactionId,
+		TransactionId:        params.TransactionId,
+		Password:             creds.Password,
+	}
+
+	var cResp *GetTransactionStatusResponse
+	resp, err := c.httpClient.Do(GetTransactionStatusEndpoint, requestBody)
 	if err != nil {
 		return cResp, err
 	}
@@ -186,29 +193,4 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 // This is primarily useful for testing.
 func (c *Client) GetAuthCredentials() Credentials {
 	return c.auth.Authenticate()
-}
-
-// GetTransactionStatus queries the status of a transaction
-func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetTransactionStatusResponse, error) {
-	creds := c.auth.Authenticate()
-	requestBody := GetTransactionStatusBody{
-		Username:             creds.Username,
-		Timestamp:            creds.Timestamp,
-		RequestTransactionId: params.RequestTransactionId,
-		TransactionId:        params.TransactionId,
-		Password:             creds.Password,
-	}
-
-	var cResp *GetTransactionStatusResponse
-	resp, err := c.doRequest(GetTransactionStatusEndpoint, requestBody)
-	if err != nil {
-		return cResp, err
-	}
-	respBytes, _ := json.Marshal(resp)
-	err = json.Unmarshal(respBytes, &cResp)
-	if err != nil {
-		return cResp, err
-	}
-
-	return cResp, nil
 }
