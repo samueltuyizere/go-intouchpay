@@ -72,3 +72,11 @@ func TestNewPhoneValidator(t *testing.T) {
 	validator := Intouchpay.NewPhoneValidator()
 	assert.NotNil(t, validator)
 }
+
+// TestSanitizePhoneNumberInvalidWith250Prefix tests that invalid numbers with 250 prefix are rejected
+func TestSanitizePhoneNumberInvalidWith250Prefix(t *testing.T) {
+	// This was the bug: "250999999999" would bypass validation before the fix
+	_, err := Intouchpay.SanitizePhoneNumber("250999999999")
+	assert.Error(t, err, "invalid number with 250 prefix should be rejected")
+	assert.Contains(t, err.Error(), "invalid phone number")
+}
