@@ -42,7 +42,7 @@ Copy and paste this prompt to your AI coding assistant to integrate go-intouchpa
 I need you to integrate the go-intouchpay payment gateway package into my Go project.
 
 Please follow the instructions in this document:
-https://raw.githubusercontent.com/samueltuyizere/go-intouchpay/v2/docs/AI_AGENT_INTEGRATION.md
+https://raw.githubusercontent.com/samueltuyizere/go-intouchpay/docs/AI_AGENT_INTEGRATION.md
 
 The package documentation is at:
 https://github.com/samueltuyizere/go-intouchpay
@@ -683,7 +683,7 @@ func main() {
 
 ## API Documentation
 
-This package implements the IntouchPay API v1.2. For more details, refer to the official IntouchPay API documentation.
+This package implements the IntouchPay API v1.2 For more details, refer to the official IntouchPay API documentation.
 
 ## License
 
@@ -701,10 +701,6 @@ For issues and questions:
 - Contact IntouchPay support for API-related questions
 
 ## Migration Guide
-
-### Upgrading from v0.1.2 to v2.0.0
-
-**No code changes required!** This release is fully backward compatible.
 
 #### Existing Code (Still Works)
 
@@ -778,7 +774,7 @@ client := Intouchpay.NewClientWithOptions(
 
 ## Changelog
 
-### v2.0.0
+### v1.1.0
 
 **Architecture Improvements:**
 - Extracted authentication into `Authenticator` interface for testability
