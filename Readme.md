@@ -15,6 +15,54 @@ A Go package for integrating with the IntouchPay Payments Gateway API. This pack
 - ✅ **Option pattern** - Flexible client configuration
 - ✅ **Typed errors** - APIError and ValidationError types
 
+## AI Agent Integration
+
+This package includes special documentation for AI coding assistants (Claude, GPT-4, GitHub Copilot, Cursor, etc.).
+
+### For AI Agents
+
+If you are an AI coding agent tasked with integrating this package, please read the detailed integration guide:
+
+📄 **[AI Agent Integration Guide](docs/AI_AGENT_INTEGRATION.md)**
+
+This guide contains:
+- Complete integration checklist
+- Required credentials and how to request them
+- Code examples for all API operations
+- Callback/webhook implementation
+- Error handling patterns
+- Testing with mocks
+- Complete working example
+
+### Prompt for Your AI Coding Assistant
+
+Copy and paste this prompt to your AI coding assistant to integrate go-intouchpay into your project:
+
+```
+I need you to integrate the go-intouchpay payment gateway package into my Go project.
+
+Please follow the instructions in this document:
+https://raw.githubusercontent.com/samueltuyizere/go-intouchpay/v2/docs/AI_AGENT_INTEGRATION.md
+
+The package documentation is at:
+https://github.com/samueltuyizere/go-intouchpay
+
+Before you start, I'll provide my IntouchPay credentials:
+- Username: [YOUR_USERNAME]
+- Account Number: [YOUR_ACCOUNT_NUMBER]  
+- Partner Password: [YOUR_PARTNER_PASSWORD]
+- Callback URL: [YOUR_CALLBACK_URL]
+- Service ID (SID): [0 or 1]
+
+Please:
+1. Install the package
+2. Create a client with my credentials
+3. Implement [payment request / deposit / balance / all operations]
+4. Set up the callback webhook handler
+5. Add proper error handling
+6. Use environment variables for credentials (not hardcoded values)
+```
+
 ## Installation
 
 ```bash
@@ -651,6 +699,82 @@ For issues and questions:
 
 - Open an issue on GitHub
 - Contact IntouchPay support for API-related questions
+
+## Migration Guide
+
+### Upgrading from v0.1.2 to v2.0.0
+
+**No code changes required!** This release is fully backward compatible.
+
+#### Existing Code (Still Works)
+
+```go
+// This continues to work exactly as before
+client := Intouchpay.NewClient(
+    "your_username",
+    "your_account_number",
+    "your_partner_password",
+    "https://yourdomain.com/callback",
+    0,
+)
+```
+
+#### New Features Available (Optional)
+
+**1. Flexible Configuration with Options**
+
+```go
+// NEW: Use options for more control
+client := Intouchpay.NewClientWithOptions(
+    "your_username",
+    "your_account_number",
+    "your_partner_password",
+    Intouchpay.WithCallbackURL("https://yourdomain.com/callback"),
+    Intouchpay.WithSid(0),
+    Intouchpay.WithTimeout(30 * time.Second),
+)
+```
+
+**2. Better Error Handling**
+
+```go
+// NEW: Typed errors for clearer error handling
+response, err := client.RequestPayment(params)
+if err != nil {
+    if Intouchpay.IsAPIError(err) {
+        apiErr := err.(*Intouchpay.APIError)
+        log.Printf("API returned status %d", apiErr.StatusCode)
+    }
+    if Intouchpay.IsValidationError(err) {
+        valErr := err.(*Intouchpay.ValidationError)
+        log.Printf("Invalid field: %s", valErr.Field)
+    }
+    return
+}
+```
+
+**3. Testing with Mocks**
+
+```go
+// NEW: Mock authentication and HTTP for tests
+mockAuth := &MockAuthenticator{Creds: Intouchpay.Credentials{
+    Username: "test", Timestamp: "20260320120000", Password: "hash",
+}}
+mockHTTP := &MockHTTPClient{Response: &map[string]interface{}{"success": true}}
+
+client := Intouchpay.NewClientWithHTTPClient(mockAuth, mockHTTP)
+```
+
+#### Timeout Change
+
+The default HTTP timeout changed from undefined to **60 seconds**. This should not affect most users, but if you need a different timeout:
+
+```go
+client := Intouchpay.NewClientWithOptions(
+    "username", "account", "password",
+    Intouchpay.WithTimeout(30 * time.Second),
+)
+```
 
 ## Changelog
 
