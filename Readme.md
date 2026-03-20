@@ -42,7 +42,7 @@ Copy and paste this prompt to your AI coding assistant to integrate go-intouchpa
 I need you to integrate the go-intouchpay payment gateway package into my Go project.
 
 Please follow the instructions in this document:
-https://raw.githubusercontent.com/samueltuyizere/go-intouchpay/docs/AI_AGENT_INTEGRATION.md
+https://raw.githubusercontent.com/samueltuyizere/go-intouchpay/refs/heads/master/docs/AI_AGENT_INTEGRATION.md
 
 The package documentation is at:
 https://github.com/samueltuyizere/go-intouchpay
