@@ -2,15 +2,6 @@ package Intouchpay
 
 import "net/http"
 
-// API endpoint constants
-const (
-	RequestPaymentEndpoint       string = "/requestpayment/"
-	RequestDepositEndpoint       string = "/requestdeposit/"
-	GetBalanceEndpoint           string = "/getbalance/"
-	GetTransactionStatusEndpoint string = "/gettransactionstatus/"
-	BaseURL                      string = "https://www.intouchpay.co.rw/api"
-)
-
 // Client represents an IntouchPay client configured with authentication details
 type Client struct {
 	Username        string // User name assigned to your account
