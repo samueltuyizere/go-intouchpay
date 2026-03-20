@@ -1,12 +1,22 @@
 package Intouchpay_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
 	Intouchpay "github.com/samueltuyizere/go-intouchpay"
 	"github.com/stretchr/testify/assert"
 )
+
+// MockAuthenticator implements Authenticator for testing
+type MockAuthenticator struct {
+	Creds Intouchpay.Credentials
+}
+
+func (m *MockAuthenticator) Authenticate() Intouchpay.Credentials {
+	return m.Creds
+}
 
 // Returns a new instance of Client with the provided parameters
 
@@ -42,12 +52,13 @@ func TestNewClientWithValidInputParameters(t *testing.T) {
 		t.Errorf("Expected SID %d, but got %d", sid, client.Sid)
 	}
 
-	if client.HTTPClient.Timeout != 5*time.Second {
-		t.Errorf("Expected timeout of %s, but got %s", 5*time.Second, client.HTTPClient.Timeout)
+	// Fixed: Now expects 60 seconds (DefaultTimeout)
+	if client.HTTPClient.Timeout != Intouchpay.DefaultTimeout {
+		t.Errorf("Expected timeout of %v, but got %v", Intouchpay.DefaultTimeout, client.HTTPClient.Timeout)
 	}
 }
 
-// Sets the HTTP client timeout to 5 seconds
+// Sets the HTTP client timeout to DefaultTimeout (60 seconds)
 func TestNewClientSetsHTTPClientTimeout(t *testing.T) {
 	username := "testuser"
 	accountNumber := "1234567890"
@@ -57,7 +68,7 @@ func TestNewClientSetsHTTPClientTimeout(t *testing.T) {
 
 	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
 
-	assert.Equal(t, 5*time.Second, client.HTTPClient.Timeout)
+	assert.Equal(t, Intouchpay.DefaultTimeout, client.HTTPClient.Timeout)
 }
 
 // Returns a pointer to a new client instance
@@ -113,4 +124,93 @@ func TestNewClientReturnsPointerToNewInstanceWithEmptyPartnerPassword(t *testing
 
 	assert.NotNil(t, client)
 	assert.Equal(t, partnerPassword, client.PartnerPassword)
+}
+
+// Test NewClientWithAuth with mock authenticator
+func TestNewClientWithAuth(t *testing.T) {
+	mockAuth := &MockAuthenticator{
+		Creds: Intouchpay.Credentials{
+			Username:  "test_user",
+			Timestamp: "20260320120000",
+			Password:  "test_hash",
+		},
+	}
+
+	client := Intouchpay.NewClientWithAuth(mockAuth)
+
+	assert.NotNil(t, client)
+	assert.Equal(t, Intouchpay.DefaultTimeout, client.HTTPClient.Timeout)
+}
+
+// Test NewClientWithAuth with options
+func TestNewClientWithAuthWithOptions(t *testing.T) {
+	mockAuth := &MockAuthenticator{
+		Creds: Intouchpay.Credentials{
+			Username:  "test_user",
+			Timestamp: "20260320120000",
+			Password:  "test_hash",
+		},
+	}
+
+	customTimeout := 30 * time.Second
+	client := Intouchpay.NewClientWithAuth(mockAuth, Intouchpay.WithTimeout(customTimeout))
+
+	assert.NotNil(t, client)
+	assert.Equal(t, customTimeout, client.HTTPClient.Timeout)
+}
+
+// Test NewClientWithOptions
+func TestNewClientWithOptions(t *testing.T) {
+	client := Intouchpay.NewClientWithOptions(
+		"testuser",
+		"1234567890",
+		"password",
+		Intouchpay.WithCallbackURL("https://example.com/callback"),
+		Intouchpay.WithSid(12345),
+		Intouchpay.WithTimeout(30*time.Second),
+	)
+
+	assert.NotNil(t, client)
+	assert.Equal(t, "testuser", client.Username)
+	assert.Equal(t, "1234567890", client.AccountNo)
+	assert.Equal(t, "password", client.PartnerPassword)
+	assert.Equal(t, "https://example.com/callback", client.CallbackURL)
+	assert.Equal(t, 12345, client.Sid)
+	assert.Equal(t, 30*time.Second, client.HTTPClient.Timeout)
+}
+
+// Test WithHTTPClient option
+func TestWithHTTPClient(t *testing.T) {
+	customClient := &http.Client{Timeout: 10 * time.Second}
+	mockAuth := &MockAuthenticator{
+		Creds: Intouchpay.Credentials{
+			Username:  "test_user",
+			Timestamp: "20260320120000",
+			Password:  "test_hash",
+		},
+	}
+
+	client := Intouchpay.NewClientWithAuth(mockAuth, Intouchpay.WithHTTPClient(customClient))
+
+	assert.Equal(t, customClient, client.HTTPClient)
+	assert.Equal(t, 10*time.Second, client.HTTPClient.Timeout)
+}
+
+// Test WithAuthenticator option
+func TestWithAuthenticator(t *testing.T) {
+	mockAuth := &MockAuthenticator{
+		Creds: Intouchpay.Credentials{
+			Username:  "test_user",
+			Timestamp: "20260320120000",
+			Password:  "test_hash",
+		},
+	}
+
+	client := Intouchpay.NewClientWithOptions("user", "acc", "pass", Intouchpay.WithAuthenticator(mockAuth))
+
+	// Verify the authenticator is used by calling it
+	creds := client.GetAuthCredentials()
+	assert.Equal(t, "test_user", creds.Username)
+	assert.Equal(t, "20260320120000", creds.Timestamp)
+	assert.Equal(t, "test_hash", creds.Password)
 }

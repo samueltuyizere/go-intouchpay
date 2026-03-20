@@ -2,34 +2,55 @@ package Intouchpay
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
 
-// NewClient creates a new IntouchPay client
+// NewClient creates a new IntouchPay client with the provided credentials.
+// This is a convenience constructor that creates a default authenticator.
 func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid int) *Client {
-	return &Client{
+	auth := NewAuthenticator(username, accountNumber, partnerPassword)
+	c := &Client{
 		Username:        username,
 		AccountNo:       accountNumber,
 		PartnerPassword: partnerPassword,
 		CallbackURL:     callbackUrl,
 		Sid:             sid,
-		HTTPClient:      &http.Client{Timeout: 60 * time.Second}, // API responds within 60 seconds per documentation
+		auth:            auth,
+		HTTPClient:      &http.Client{Timeout: DefaultTimeout},
 	}
+	return c
 }
 
-// generatePassword calculates the SHA256 hash of the password string
-func (c *Client) generatePassword(timestamp string) string {
-	passwordString := c.Username + c.AccountNo + c.PartnerPassword + timestamp
-	hash := sha256.New()
-	hash.Write([]byte(passwordString))
-	hashInBytes := hash.Sum(nil)
-	password := hex.EncodeToString(hashInBytes)
-	return password
+// NewClientWithAuth creates a new IntouchPay client with a custom authenticator.
+// Use this for testing or when you need custom authentication behavior.
+func NewClientWithAuth(auth Authenticator, opts ...Option) *Client {
+	c := &Client{
+		auth:       auth,
+		HTTPClient: &http.Client{Timeout: DefaultTimeout},
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
+// NewClientWithOptions creates a new IntouchPay client with options.
+// Use this for flexible configuration including custom HTTP client, timeout, etc.
+func NewClientWithOptions(username, accountNumber, partnerPassword string, opts ...Option) *Client {
+	auth := NewAuthenticator(username, accountNumber, partnerPassword)
+	c := &Client{
+		Username:        username,
+		AccountNo:       accountNumber,
+		PartnerPassword: partnerPassword,
+		auth:            auth,
+		HTTPClient:      &http.Client{Timeout: DefaultTimeout},
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 // doRequest sends an HTTP JSON POST request and handles the response
@@ -62,7 +83,7 @@ func (c *Client) doRequest(endpoint string, requestBody interface{}) (*map[strin
 		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, *response)
+		return response, newAPIError(resp.StatusCode, resp.Status, *response)
 	}
 	return response, nil
 }
@@ -73,15 +94,13 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC()
-	timestamp := now.Format("20060102150405")
-	password := c.generatePassword(timestamp)
 
+	creds := c.auth.Authenticate()
 	requestBody := RequestPaymentBody{
-		Username:             c.Username,
-		Timestamp:            timestamp,
+		Username:             creds.Username,
+		Timestamp:            creds.Timestamp,
 		Amount:               params.Amount,
-		Password:             password,
+		Password:             creds.Password,
 		MobilePhone:          phoneNumber,
 		RequestTransactionId: params.RequestTransactionId,
 		AccountNo:            c.AccountNo,
@@ -110,18 +129,16 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC()
-	timestamp := now.Format("20060102150405")
-	password := c.generatePassword(timestamp)
 
+	creds := c.auth.Authenticate()
 	requestBody := RequestDepositBody{
-		Username:             c.Username,
-		Timestamp:            timestamp,
+		Username:             creds.Username,
+		Timestamp:            creds.Timestamp,
 		Amount:               params.Amount,
 		WithdrawCharge:       params.WithdrawCharge,
 		Reason:               params.Reason,
 		Sid:                  c.Sid,
-		Password:             password,
+		Password:             creds.Password,
 		MobilePhoneNo:        phoneNumber,
 		RequestTransactionId: params.RequestTransactionId,
 		AccountNo:            c.AccountNo,
@@ -143,15 +160,12 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 
 // GetBalance queries account balance
 func (c *Client) GetBalance() (*BalanceResponse, error) {
-	now := time.Now().UTC()
-	timestamp := now.Format("20060102150405")
-	password := c.generatePassword(timestamp)
-
+	creds := c.auth.Authenticate()
 	requestBody := GetBalanceBody{
-		Username:  c.Username,
-		Timestamp: timestamp,
+		Username:  creds.Username,
+		Timestamp: creds.Timestamp,
 		AccountNo: c.AccountNo,
-		Password:  password,
+		Password:  creds.Password,
 	}
 
 	var cResp *BalanceResponse
@@ -168,18 +182,21 @@ func (c *Client) GetBalance() (*BalanceResponse, error) {
 	return cResp, nil
 }
 
+// GetAuthCredentials returns the current authentication credentials.
+// This is primarily useful for testing.
+func (c *Client) GetAuthCredentials() Credentials {
+	return c.auth.Authenticate()
+}
+
 // GetTransactionStatus queries the status of a transaction
 func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetTransactionStatusResponse, error) {
-	now := time.Now().UTC()
-	timestamp := now.Format("20060102150405")
-	password := c.generatePassword(timestamp)
-
+	creds := c.auth.Authenticate()
 	requestBody := GetTransactionStatusBody{
-		Username:             c.Username,
-		Timestamp:            timestamp,
+		Username:             creds.Username,
+		Timestamp:            creds.Timestamp,
 		RequestTransactionId: params.RequestTransactionId,
 		TransactionId:        params.TransactionId,
-		Password:             password,
+		Password:             creds.Password,
 	}
 
 	var cResp *GetTransactionStatusResponse
