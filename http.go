@@ -55,7 +55,7 @@ func (c *defaultHTTPClient) Do(endpoint string, body interface{}) (*map[string]i
 	}()
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %v", resp.StatusCode, resp.Status, err)
+		return response, fmt.Errorf("IntouchPay API error: %d\n %s\n %w", resp.StatusCode, resp.Status, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
