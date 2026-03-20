@@ -188,6 +188,8 @@ func TestWithHTTPClientInterfaceOption(t *testing.T) {
 
 	assert.NotNil(t, client)
 	// The mock client should be set (verified by using the client)
-	_, _ = client.GetBalance()
+	resp, err := client.GetBalance()
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 	assert.True(t, mockClient.Called)
 }
