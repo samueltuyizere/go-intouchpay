@@ -18,7 +18,7 @@ type MockHTTPClient struct {
 	Called   bool
 }
 
-func (m *MockHTTPClient) Do(endpoint string, body interface{}) (*map[string]interface{}, error) {
+func (m *MockHTTPClient) Do(_ string, _ interface{}) (*map[string]interface{}, error) {
 	m.Called = true
 	return m.Response, m.Error
 }
@@ -43,7 +43,9 @@ func TestHTTPClientDoSuccess(t *testing.T) {
 			"message": "OK",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer server.Close()
 
@@ -61,13 +63,15 @@ func TestHTTPClientDoSuccess(t *testing.T) {
 // TestHTTPClientDoError tests HTTP request with error response
 func TestHTTPClientDoError(t *testing.T) {
 	// Create test server that returns error
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		response := map[string]interface{}{
 			"success": false,
 			"message": "Bad request",
 		}
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer server.Close()
 
@@ -104,7 +108,7 @@ func TestMockHTTPClient(t *testing.T) {
 	params := &Intouchpay.RequestPaymentParams{
 		Amount:               1000,
 		MobilePhone:          "0781234567",
-		RequestTransactionId: "TX123",
+		RequestTransactionID: "TX123",
 	}
 
 	resp, err := client.RequestPayment(params)
@@ -138,14 +142,14 @@ func TestRequestPaymentWithMockHTTP(t *testing.T) {
 	params := &Intouchpay.RequestPaymentParams{
 		Amount:               5000,
 		MobilePhone:          "0781234567",
-		RequestTransactionId: "TX456",
+		RequestTransactionID: "TX456",
 	}
 
 	resp, err := client.RequestPayment(params)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "pending", resp.Status)
-	assert.Equal(t, "TX456", resp.RequestTransactionId)
+	assert.Equal(t, "TX456", resp.RequestTransactionID)
 	assert.True(t, resp.Success)
 }
 

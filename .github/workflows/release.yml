@@ -1,0 +1,149 @@
+# Release Workflow - Auto-publish when PR is merged by owner
+# Creates a GitHub release and Git tag, which Go Proxy automatically picks up
+
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    # Only run when PR is merged (not just closed) and merger is the owner
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.merged_by.login == 'samueltuyizere'
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Get the latest tag, default to v0.0.0 if none exists
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+
+      - name: Determine version bump
+        id: version
+        run: |
+          LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Remove 'v' prefix for version parsing
+          VERSION="${LATEST_TAG#v}"
+          
+          # Parse version parts
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+          
+          # Default to patch bump
+          BUMP_TYPE="patch"
+          
+          # Check for breaking changes or major label
+          if [[ "$PR_LABELS" == *"major"* ]] || [[ "$PR_TITLE" == *"BREAKING CHANGE"* ]] || [[ "$PR_TITLE" == *"!:"* ]]; then
+            BUMP_TYPE="major"
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          # Check for minor label or new features
+          elif [[ "$PR_LABELS" == *"minor"* ]] || [[ "$PR_TITLE" == *"feat"* ]] || [[ "$PR_TITLE" == *"feature"* ]]; then
+            BUMP_TYPE="minor"
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            # Patch bump
+            PATCH=$((PATCH + 1))
+          fi
+          
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION ($BUMP_TYPE bump)"
+
+      - name: Create Git tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+          git push origin "$NEW_VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          
+          # Generate changelog from commits between tags
+          if [ "$PREVIOUS_TAG" = "v0.0.0" ]; then
+            # First release - get all commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --reverse)
+          else
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --reverse)
+          fi
+          
+          # Save to file for multiline output
+          echo "$CHANGELOG" > /tmp/changelog.md
+          echo "changelog_file=/tmp/changelog.md" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          name: Release ${{ steps.version.outputs.new_version }}
+          body: |
+            ## What's Changed
+            
+            ${{ steps.version.outputs.bump_type }} version bump from ${{ steps.get_tag.outputs.latest_tag }} to ${{ steps.version.outputs.new_version }}
+            
+            ### Changelog
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ---
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.get_tag.outputs.latest_tag }}...${{ steps.version.outputs.new_version }}
+            
+            ### Go Package Installation
+            
+            ```bash
+            go get github.com/samueltuyizere/go-intouchpay@${{ steps.version.outputs.new_version }}
+            ```
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Release Created!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: ${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Bump Type**: ${{ steps.version.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Go users can install with:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "go get github.com/samueltuyizere/go-intouchpay@${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

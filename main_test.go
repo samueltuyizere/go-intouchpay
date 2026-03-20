@@ -26,11 +26,11 @@ func TestNewClientWithValidInputParameters(t *testing.T) {
 		username        = "testuser"
 		accountNumber   = "1234567890"
 		partnerPassword = "password"
-		callbackUrl     = "https://example.com/callback"
+		callbackURL     = "https://example.com/callback"
 		sid             = 12345
 	)
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	if client.Username != username {
 		t.Errorf("Expected username %s, but got %s", username, client.Username)
@@ -44,8 +44,8 @@ func TestNewClientWithValidInputParameters(t *testing.T) {
 		t.Errorf("Expected password %s, but got %s", partnerPassword, client.PartnerPassword)
 	}
 
-	if client.CallbackURL != callbackUrl {
-		t.Errorf("Expected callback URL %s, but got %s", callbackUrl, client.CallbackURL)
+	if client.CallbackURL != callbackURL {
+		t.Errorf("Expected callback URL %s, but got %s", callbackURL, client.CallbackURL)
 	}
 
 	if client.Sid != sid {
@@ -63,10 +63,10 @@ func TestNewClientSetsHTTPClientTimeout(t *testing.T) {
 	username := "testuser"
 	accountNumber := "1234567890"
 	partnerPassword := "password"
-	callbackUrl := "https://example.com/callback"
+	callbackURL := "https://example.com/callback"
 	sid := 12345
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	assert.Equal(t, Intouchpay.DefaultTimeout, client.HTTPClient.Timeout)
 }
@@ -76,10 +76,10 @@ func TestNewClientReturnsPointerToNewInstance(t *testing.T) {
 	username := "testuser"
 	accountNumber := "1234567890"
 	partnerPassword := "password"
-	callbackUrl := "https://example.com/callback"
+	callbackURL := "https://example.com/callback"
 	sid := 12345
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	assert.NotNil(t, client)
 }
@@ -89,10 +89,10 @@ func TestNewClientReturnsPointerToNewInstanceWithEmptyUsername(t *testing.T) {
 	username := ""
 	accountNumber := "1234567890"
 	partnerPassword := "password"
-	callbackUrl := "https://example.com/callback"
+	callbackURL := "https://example.com/callback"
 	sid := 12345
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	assert.NotNil(t, client)
 	assert.Equal(t, username, client.Username)
@@ -103,10 +103,10 @@ func TestNewClientReturnsPointerToNewInstanceWithEmptyAccountNumber(t *testing.T
 	username := "testuser"
 	accountNumber := ""
 	partnerPassword := "password"
-	callbackUrl := "https://example.com/callback"
+	callbackURL := "https://example.com/callback"
 	sid := 12345
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	assert.NotNil(t, client)
 	assert.Equal(t, accountNumber, client.AccountNo)
@@ -117,10 +117,10 @@ func TestNewClientReturnsPointerToNewInstanceWithEmptyPartnerPassword(t *testing
 	username := "testuser"
 	accountNumber := "1234567890"
 	partnerPassword := ""
-	callbackUrl := "https://example.com/callback"
+	callbackURL := "https://example.com/callback"
 	sid := 12345
 
-	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackUrl, sid)
+	client := Intouchpay.NewClient(username, accountNumber, partnerPassword, callbackURL, sid)
 
 	assert.NotNil(t, client)
 	assert.Equal(t, partnerPassword, client.PartnerPassword)

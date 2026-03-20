@@ -1,3 +1,5 @@
+// Package Intouchpay provides a Go client for the IntouchPay Payments Gateway API.
+// It supports mobile money payments, deposits, balance inquiries, and transaction status checks.
 package Intouchpay
 
 import (

@@ -7,18 +7,18 @@ import (
 
 // NewClient creates a new IntouchPay client with the provided credentials.
 // This is a convenience constructor that creates a default authenticator.
-func NewClient(username, accountNumber, partnerPassword, callbackUrl string, sid int) *Client {
+func NewClient(username, accountNumber, partnerPassword, callbackURL string, sid int) *Client {
 	auth := NewAuthenticator(username, accountNumber, partnerPassword)
 	httpClient := &http.Client{Timeout: DefaultTimeout}
 	c := &Client{
 		Username:        username,
 		AccountNo:       accountNumber,
 		PartnerPassword: partnerPassword,
-		CallbackURL:     callbackUrl,
+		CallbackURL:     callbackURL,
 		Sid:             sid,
 		auth:            auth,
 		HTTPClient:      httpClient,
-		httpClient:      NewHTTPClient(httpClient, BaseUrl),
+		httpClient:      NewHTTPClient(httpClient, BaseURL),
 	}
 	return c
 }
@@ -30,7 +30,7 @@ func NewClientWithAuth(auth Authenticator, opts ...Option) *Client {
 	c := &Client{
 		auth:       auth,
 		HTTPClient: httpClient,
-		httpClient: NewHTTPClient(httpClient, BaseUrl),
+		httpClient: NewHTTPClient(httpClient, BaseURL),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -49,7 +49,7 @@ func NewClientWithOptions(username, accountNumber, partnerPassword string, opts 
 		PartnerPassword: partnerPassword,
 		auth:            auth,
 		HTTPClient:      httpClient,
-		httpClient:      NewHTTPClient(httpClient, BaseUrl),
+		httpClient:      NewHTTPClient(httpClient, BaseURL),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -84,7 +84,7 @@ func (c *Client) RequestPayment(params *RequestPaymentParams) (*RequestPaymentRe
 		Amount:               params.Amount,
 		Password:             creds.Password,
 		MobilePhone:          phoneNumber,
-		RequestTransactionId: params.RequestTransactionId,
+		RequestTransactionID: params.RequestTransactionID,
 		AccountNo:            c.AccountNo,
 	}
 	if c.CallbackURL != "" {
@@ -122,7 +122,7 @@ func (c *Client) RequestDeposit(params *RequestDepositParams) (*RequestDepositRe
 		Sid:                  c.Sid,
 		Password:             creds.Password,
 		MobilePhoneNo:        phoneNumber,
-		RequestTransactionId: params.RequestTransactionId,
+		RequestTransactionID: params.RequestTransactionID,
 		AccountNo:            c.AccountNo,
 	}
 
@@ -170,8 +170,8 @@ func (c *Client) GetTransactionStatus(params *GetTransactionStatusParams) (*GetT
 	requestBody := GetTransactionStatusBody{
 		Username:             creds.Username,
 		Timestamp:            creds.Timestamp,
-		RequestTransactionId: params.RequestTransactionId,
-		TransactionId:        params.TransactionId,
+		RequestTransactionID: params.RequestTransactionID,
+		TransactionID:        params.TransactionID,
 		Password:             creds.Password,
 	}
 

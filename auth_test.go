@@ -36,7 +36,7 @@ func TestAuthenticateTimestampFormat(t *testing.T) {
 
 	// Timestamp should be 14 digits: YYYYMMDDHHMMSS
 	assert.Len(t, creds.Timestamp, 14)
-	
+
 	// Should be parseable as the expected format
 	_, err := time.Parse("20060102150405", creds.Timestamp)
 	assert.NoError(t, err)

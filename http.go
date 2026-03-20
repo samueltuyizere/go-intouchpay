@@ -30,14 +30,14 @@ func NewHTTPClient(httpClient *http.Client, baseURL string) HTTPClient {
 // Do sends a POST request to the given endpoint with the provided body
 func (c *defaultHTTPClient) Do(endpoint string, body interface{}) (*map[string]interface{}, error) {
 	var response *map[string]interface{}
-	requestUrl := c.baseURL + endpoint
+	requestURL := c.baseURL + endpoint
 
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return response, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, requestUrl, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return response, err
 	}
