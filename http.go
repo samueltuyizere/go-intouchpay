@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -49,7 +50,7 @@ func (c *defaultHTTPClient) Do(endpoint string, body interface{}) (*map[string]i
 	}
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			fmt.Printf("Warning: failed to close response body: %v\n", closeErr)
+			log.Printf("warning: failed to close response body: %v", closeErr)
 		}
 	}()
 
