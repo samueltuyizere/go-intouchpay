@@ -181,7 +181,11 @@ func TestGetBalanceWithMockHTTP(t *testing.T) {
 
 // TestWithHTTPClientInterfaceOption tests the WithHTTPClientInterface option
 func TestWithHTTPClientInterfaceOption(t *testing.T) {
-	mockClient := &MockHTTPClient{}
+	mockResp := &map[string]interface{}{
+		"balance": 1234.56,
+		"success": true,
+	}
+	mockClient := &MockHTTPClient{Response: mockResp}
 	auth := Intouchpay.NewAuthenticator("user", "acc", "pass")
 
 	client := Intouchpay.NewClientWithAuth(auth, Intouchpay.WithHTTPClientInterface(mockClient))
